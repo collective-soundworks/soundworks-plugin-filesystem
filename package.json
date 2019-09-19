@@ -1,0 +1,41 @@
+{
+  "name": "@soundworks/service-file-system",
+  "version": "0.0.1",
+  "description": "file-system service for soundworks",
+  "authors": [
+    "Benjamin Matuszewski"
+  ],
+  "private": true,
+  "license": "BSD-3-Clause",
+  "scripts": {
+    "clean": "rm -Rf client && rm -Rf server",
+    "deploy": "np --yolo",
+    "doc": "jsdoc -c jsdoc.json",
+    "version": "npm run clean && npm run transpile && npm run doc && git add docs",
+    "transpile:client": "babel src/client --out-dir client",
+    "transpile:server": "babel src/server --out-dir server",
+    "transpile": "npm run transpile:server && npm run transpile:client",
+    "watch:client": "chokidar src/client/ -c \"npm run transpile:client\"",
+    "watch:server": "chokidar src/server/ -c \"npm run transpile:server\"",
+    "watch": "npm run clean && npm run transpile && concurrently \"npm run watch:client\" \"npm run watch:server\""
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/collective-soundworks/soundworks-services"
+  },
+  "dependencies": {
+    "directory-tree": "^2.2.4",
+    "lodash.debounce": "^4.0.8"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.4.4",
+    "chokidar": "^3.1.0",
+    "chokidar-cli": "^1.2.2",
+    "concurrently": "^4.1.0"
+  }
+}
