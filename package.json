@@ -5,8 +5,14 @@
   "authors": [
     "Benjamin Matuszewski"
   ],
-  "private": true,
-  "license": "BSD-3-Clause",
+    "license": "BSD-3-Clause",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/collective-soundworks/soundworks-service-file-system"
+  },
   "scripts": {
     "clean": "rm -Rf client && rm -Rf server",
     "deploy": "np --yolo",
@@ -18,13 +24,6 @@
     "watch:client": "chokidar src/client/ -c \"npm run transpile:client\"",
     "watch:server": "chokidar src/server/ -c \"npm run transpile:server\"",
     "watch": "npm run clean && npm run transpile && concurrently \"npm run watch:client\" \"npm run watch:server\""
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/collective-soundworks/soundworks-services"
   },
   "dependencies": {
     "directory-tree": "^2.2.4",
