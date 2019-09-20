@@ -10,6 +10,7 @@ import compile from 'template-literal';
 import serviceFileSystemFactory from '@soundworks/service-file-system/server';
 
 import PlayerExperience from './PlayerExperience';
+import ThingExperience from './ThingExperience';
 
 const ENV = process.env.ENV || 'default';
 const config = getConfig(ENV);
@@ -27,7 +28,6 @@ console.log(`
     // -------------------------------------------------------------------
     // register services
     // -------------------------------------------------------------------
-
     server.registerService('file-system', serviceFileSystemFactory, {
       directories: [{
         name: 'test-files',
@@ -64,6 +64,7 @@ console.log(`
     server.router.use('build', serveStatic(path.join('.build', 'public')));
 
     const playerExperience = new PlayerExperience(server, 'player');
+    const thingExperience = new ThingExperience(server, 'thing');
 
     await server.start();
     playerExperience.start();

@@ -16,7 +16,7 @@ function getConfig(ENV) {
     }
   } catch(err) {
     console.log(`Invalid "${ENV}" env config file`);
-    process.exit(0);
+    process.exit(1);
   }
   // parse app config
   try {
@@ -24,7 +24,7 @@ function getConfig(ENV) {
     appConfig = JSON5.parse(fs.readFileSync(appConfigPath, 'utf-8'));
   } catch(err) {
     console.log(`Invalid app config file`);
-    process.exit(0);
+    process.exit(1);
   }
 
   // parse services config
@@ -33,7 +33,7 @@ function getConfig(ENV) {
     servicesConfig = JSON5.parse(fs.readFileSync(servicesConfigPath, 'utf-8'));
   } catch(err) {
     console.log(`Invalid services config file`);
-    process.exit(0);
+    process.exit(1);
   }
 
   return { env: envConfig, app: appConfig, services: servicesConfig };

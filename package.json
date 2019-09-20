@@ -1,6 +1,6 @@
 {
   "name": "@soundworks/service-file-system",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha.0",
   "description": "file-system service for soundworks",
   "authors": [
     "Benjamin Matuszewski"

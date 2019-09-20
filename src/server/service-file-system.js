@@ -179,15 +179,13 @@ const serviceFactory = function(Service) {
               // @todo - open an issue with a proper report file
               const unlinkedDir = new Set();
 
+              watcher.on('unlinkDir', path => unlinkedDir.add(path));
+
               watcher.on('addDir', path => {
                 if (unlinkedDir.has(path)) {
                   watcher.close();
                   watch(false);
                 }
-              });
-
-              watcher.on('unlinkDir', path => {
-                unlinkedDir.add(path);
               });
             };
 
