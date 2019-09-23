@@ -6,8 +6,8 @@ Example of README file
 
 ## Install
 
-```
-npm install --save @soundworks/service-template
+```sh
+npm install --save @soundworks/service-file-system
 ```
 
 ## Usage
@@ -16,25 +16,37 @@ npm install --save @soundworks/service-template
 
 #### registering the service
 
-```
+```js
 // index.js
 import { Client } from '@soundworks/core/client';
-import serviceTemplateFactory from '@soundworks/service-template/client';
+import serviceFileSystemFactory from '@soundworks/service-file-system/client';
 
-const client = new Client({ ... });
-client.registerService('template', serviceTemplateFactory, options = {}, dependencies = []);
+const client = new Client();
+client.registerService('file-system', serviceFileSystemFactory, {}, []);
 ```
 
-#### requiring the service 
+#### requiring and using the service 
 
-```
+```js
 // MyExperience.js
 import { Experience } from '@soundworks/core/client';
 
 class MyExperience extends Experience {
   constructor() {
     super();
-    this.template = this.require('template');
+    this.fileSystem = this.require('file-system');
+  }
+
+  start() {
+    // listening for updates
+    this.fileSystem.state.subscribe(updates => {
+      const fileSystemDescriprion = this.fileSystem.state.get('test-files');
+      console.log(fileSystemDescriprion);
+    });
+
+    // getting current state
+    const fileSystemDescriprion = this.fileSystem.state.get('test-files');
+    console.log(fileSystemDescriprion);
   }
 }
 ```
@@ -45,10 +57,43 @@ class MyExperience extends Experience {
 
 #### registering the service
 
+```js
+import { Server } from '@soundworks/core/server';
+import serviceFileSystemFactory from '@soundworks/service-file-system/server';
+
+const server = new Server();
+
+server.registerService('file-system', serviceFileSystemFactory, {
+  directories: [{
+    name: 'test-files',
+    path: path.join('public', 'test'),
+    publicDirectory: 'public',
+    watch: true,
+  }],
+});
+```
+
 #### requiring the service 
+
+```js
+import { Experience } from '@soundworks/core/server';
+
+class PlayerExperience extends Experience {
+  constructor(server, clientTypes, options = {}) {
+    super(server, clientTypes);
+
+    this.fileSystem = this.require('file-system');
+  }
+}
+```
 
 #### options
 
+@param {Array} [directories=[]] - List of directory configuration to be listed and optionally watched, the
+  - `directory.name` - user defined named, allowing to retrieve the structure
+  - `directory.path` - path of the directory in the file system
+  - `directory.publicDirectory` - path to the http public directory, thats allows to create url from filenames.
+  - `directory.watch` - defines if the directory should be watched and trigger updates on file change.
 
 ## License
 

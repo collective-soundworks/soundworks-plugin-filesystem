@@ -35,7 +35,7 @@ console.log(`
         publicDirectory: 'public',
         watch: true,
       }],
-    })
+    });
 
     // -------------------------------------------------------------------
     // launch application
