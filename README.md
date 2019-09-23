@@ -1,6 +1,6 @@
 # `@soundworks/service-file-system`
 
-> `soundworks` service providing a representation of the file system at runtime. 
+> `soundworks` service providing a representation of the file system at runtime.  
 > Basically a wrapper around [directory-tree](https://github.com/mihneadb/node-directory-tree) and [chokidar](https://github.com/paulmillr/chokidar)
 
 ## Install
