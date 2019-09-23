@@ -1,8 +1,6 @@
 # `@soundworks/service-file-system`
 
-> Template for developmeent of soundworks services
-
-Example of README file
+> `soundworks` service providing a representation of the file system at runtime. Basically a wrapper around [directory-tree](https://github.com/mihneadb/node-directory-tree) and [chokidar](https://github.com/paulmillr/chokidar)
 
 ## Install
 
