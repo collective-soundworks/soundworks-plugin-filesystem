@@ -12,8 +12,6 @@ const serviceFactory = function(Service) {
     }
 
     async start() {
-      super.start();
-
       this.state = await this.client.stateManager.attach(`s:${this.name}`);
       this.started();
       this.ready();
