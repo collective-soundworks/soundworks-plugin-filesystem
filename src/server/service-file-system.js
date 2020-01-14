@@ -125,11 +125,11 @@ const serviceFactory = function(Service) {
     }
 
     async start() {
-      this.state = this.server.stateManager.create(`s:${this.name}`);
+      this.state = await this.server.stateManager.create(`s:${this.name}`);
 
       this.started();
 
-      const promises = this.options.directories.map((config) => {
+      const promises = this.options.directories.map(async (config) => {
         const rootPath = config.path;
         const exclude = /(^|[\/\\])\../;
 
@@ -137,11 +137,11 @@ const serviceFactory = function(Service) {
           return new Promise((resolve, reject) => {
             let watcher = null;
 
-            const watch = (firstLaunch = false) => {
+            const watch = async (firstLaunch = false) => {
               // initial tree update or after chokidar relaunch
               let tree = dirTree(rootPath, { exclude });
               tree = parseTree(tree, config);
-              this.state.set({ [config.name]: tree });
+              await this.state.set({ [config.name]: tree });
 
               // run chokidar.on('all') => getTree, parseTree
               const watcher = chokidar.watch(rootPath, {
@@ -194,14 +194,15 @@ const serviceFactory = function(Service) {
         } else {
           let tree = dirTree(rootPath, { exclude });
           tree = parseTree(tree, config);
-          this.state.set({ [config.name]: tree });
+          await this.state.set({ [config.name]: tree });
 
           return Promise.resolve();
         }
       });
 
       try {
-        await Promise.resolve(promises);
+        const result = await Promise.all(promises);
+        console.log(result);
         this.ready();
       } catch(err) {
         this.error(err.message);
