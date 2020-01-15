@@ -201,8 +201,7 @@ const serviceFactory = function(Service) {
       });
 
       try {
-        const result = await Promise.all(promises);
-        console.log(result);
+        await Promise.all(promises);
         this.ready();
       } catch(err) {
         this.error(err.message);
