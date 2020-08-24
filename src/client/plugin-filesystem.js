@@ -1,6 +1,6 @@
-const serviceFactory = function(Service) {
+const pluginFactory = function(AbstractPlugin) {
 
-  return class ServiceFileSystem extends Service {
+  return class PluginFilesystem extends AbstractPlugin {
     constructor(client, name, options) {
       super(client, name);
 
@@ -16,10 +16,17 @@ const serviceFactory = function(Service) {
       this.started();
       this.ready();
     }
+
+    subscribe(callback) {
+      const unsubscribe = this.state.subscribe(callback);
+      return unsubscribe;
+    }
+
+    getValues() {
+      return this.state.getValues();
+    }
   }
 }
 
-// not mandatory
-serviceFactory.defaultName = 'file-system';
+export default pluginFactory;
 
-export default serviceFactory;

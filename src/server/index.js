@@ -1,2 +1,2 @@
-import serviceFactory from './service-file-system.js';
-export default serviceFactory;
+import pluginFactory from './plugin-filesystem.js';
+export default pluginFactory;

@@ -1,98 +1,164 @@
-# `@soundworks/service-file-system`
+# `@soundworks/plugin-filesystem`
 
-> `soundworks` service providing a representation of the file system at runtime.  
-> Basically a wrapper around [directory-tree](https://github.com/mihneadb/node-directory-tree) and [chokidar](https://github.com/paulmillr/chokidar)
+> [`soundworks`](https://github.com/collective-soundworks/soundworks) plugin
+> to parse and watch directories and distribute their content the all clients
+> in real-time.
 
-## Install
+## Table of Contents
+
+<!-- toc -->
+
+- [Installation](#installation)
+- [Example](#example)
+- [Usage](#usage)
+  * [Server installation](#server-installation)
+    + [Registering the plugin](#registering-the-plugin)
+    + [Requiring the plugin](#requiring-the-plugin)
+  * [Client installation](#client-installation)
+    + [Registering the plugin](#registering-the-plugin-1)
+    + [Requiring the plugin](#requiring-the-plugin-1)
+  * [Relative and Absolute path](#relative-and-absolute-path)
+  * [The `publicDirectory` option behavior](#the-publicdirectory-option-behavior)
+  * [Watching a directory outside the project](#watching-a-directory-outside-the-project)
+- [Credits](#credits)
+- [License](#license)
+
+<!-- tocstop -->
+
+## Installation
 
 ```sh
-npm install --save @soundworks/service-file-system
+npm install @soundworks/plugin-filesystem --save
 ```
+
+## Example
+
+A working example can be found in the [https://github.com/collective-soundworks/soundworks-examples](https://github.com/collective-soundworks/soundworks-examples) repository.
 
 ## Usage
 
-### client
+### Server installation
 
-#### registering the service
+#### Registering the plugin
+
+```js
+// index.js
+import { Server } from '@soundworks/core/server';
+import pluginFilesystemFactory from '@soundworks/plugin-filesystem/server';
+
+const server = new Server();
+server.pluginManager.register('filesystem', pluginFilesystemFactory, {
+  directories: [{
+    // key at which the file tree will be accessible
+    name: 'my-name',
+    // path to the watched directory, can be relative to process.cwd()
+    // or absolute, in all cases file paths in the tree will be normalized
+    // to be relative to `process.cwd()`
+    path: 'path/to/directory',
+    // if defined, add an `url` to each tree node, that defines the
+    // route at which the files will be publicly accessible.
+    publicDirectory: '',
+  }],
+}, []);
+```
+
+#### Requiring the plugin
+
+```js
+// MyExperience.js
+import { AbstractExperience } from '@soundworks/core/server';
+
+class MyExperience extends AbstractExperience {
+  constructor(server, clientType) {
+    super(server, clientType);
+    // require plugin in the experience
+    this.filesystem = this.require('filesystem');
+  }
+}
+```
+
+### Client installation
+
+#### Registering the plugin
 
 ```js
 // index.js
 import { Client } from '@soundworks/core/client';
-import serviceFileSystemFactory from '@soundworks/service-file-system/client';
+import pluginFilesystemFactory from '@soundworks/plugin-filesystem/client';
 
 const client = new Client();
-client.registerService('file-system', serviceFileSystemFactory, {}, []);
+client.pluginManager.register('filesystem', pluginFilesystemFactory, {}, []);
 ```
 
-#### requiring and using the service 
+#### Requiring the plugin
 
 ```js
 // MyExperience.js
 import { Experience } from '@soundworks/core/client';
 
 class MyExperience extends Experience {
-  constructor() {
-    super();
-    this.fileSystem = this.require('file-system');
-  }
-
-  start() {
-    // listening for updates
-    this.fileSystem.state.subscribe(updates => {
-      const fileSystemDescriprion = this.fileSystem.state.get('test-files');
-      console.log(fileSystemDescriprion);
-    });
-
-    // getting current state
-    const fileSystemDescriprion = this.fileSystem.state.get('test-files');
-    console.log(fileSystemDescriprion);
+  constructor(client) {
+    super(client);
+    // require plugin in the experience
+    this.filesystem = this.require('filesystem');
   }
 }
 ```
 
-#### options
+### Getting current values and subscribing to changes
 
-### server
-
-#### registering the service
+The following API is similar client-side and server side
 
 ```js
-import { Server } from '@soundworks/core/server';
-import serviceFileSystemFactory from '@soundworks/service-file-system/server';
+// get the current values of all registered directories
+const trees = this.filesystem.getValues();
+for (let name in trees) {
+  const tree = tree[name];
+  console.log(name, tree);
+}
 
-const server = new Server();
-
-server.registerService('file-system', serviceFileSystemFactory, {
-  directories: [{
-    name: 'test-files',
-    path: path.join('public', 'test'),
-    publicDirectory: 'public',
-    watch: true,
-  }],
+// be notified when a change occurs in a watched filesystem
+this.filesystem.subscribe(updates => {
+  for (let name in updates) {
+    const tree = updates[name];
+    console.log(name, tree);
+  }
 });
 ```
 
-#### requiring the service 
+### File tree format
+
+The plugin is built on top of the [node-directory-tree](https://github.com/mihneadb/node-directory-tree) library and therefore follows the format described [here](https://github.com/mihneadb/node-directory-tree#result). The only addition to the format is the addition of a `url` field on each node to simplify access of the resources to the clients.
+
+### Routing and `publicDirectory` option
+
+The `publicDirectory` options allows to create an valid `url` from the filesystem paths. It can be use in conjunction with `server.router.use` to open specific routes for static assets.
+
+For example, let's consider a case where you watch the directory `/misc/audio` but want to publicly access the audio files through the `http://my.domain/audio/*.wav`. You can do the following:
 
 ```js
-import { Experience } from '@soundworks/core/server';
+// server/index.js
+server.router.use('audio', serveStatic('misc/audio'));
 
-class PlayerExperience extends Experience {
-  constructor(server, clientTypes, options = {}) {
-    super(server, clientTypes);
-
-    this.fileSystem = this.require('file-system');
-  }
-}
+server.pluginManager.register('filesystem', pluginFilesystemFactory, {
+  // default to `.data/scripts`
+  directories: [{
+      name: 'audio-files',
+      path: 'misc/audio,
+      publicDirectory: 'audio',
+  }]
+}, []);
 ```
 
-#### options
+Note that if `publicDirectory` is not defined in the configuration object, the `url` field won't be added to the nodes of the tree.
 
-@param {Array} [directories=[]] - List of directory configuration to be listed and optionally watched, the
-  - `directory.name` - user defined named, allowing to retrieve the structure
-  - `directory.path` - path of the directory in the file system
-  - `directory.publicDirectory` - path to the http public directory, thats allows to create url from filenames.
-  - `directory.watch` - defines if the directory should be watched and trigger updates on file change.
+### Watching a directory outside the project
+
+The plugin, and `url` strategy described above should even work with directories located at arbitrary location in your file system.
+
+## Credits
+
+The code has been initiated in the framework of the WAVE and CoSiMa research projects, funded by the French National Research Agency (ANR).
 
 ## License
 
