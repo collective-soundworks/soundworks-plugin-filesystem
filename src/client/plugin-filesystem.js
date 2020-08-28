@@ -25,6 +25,10 @@ const pluginFactory = function(AbstractPlugin) {
     getValues() {
       return this.state.getValues();
     }
+
+    get(name) {
+      return this.state.get(name);
+    }
   }
 }
 

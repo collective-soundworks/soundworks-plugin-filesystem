@@ -113,10 +113,14 @@ The following API is similar client-side and server side
 ```js
 // get the current values of all registered directories
 const trees = this.filesystem.getValues();
+
 for (let name in trees) {
   const tree = tree[name];
   console.log(name, tree);
 }
+
+// or get a single tree
+const tree = this.filesystem.get(name);
 
 // be notified when a change occurs in a watched filesystem
 this.filesystem.subscribe(updates => {

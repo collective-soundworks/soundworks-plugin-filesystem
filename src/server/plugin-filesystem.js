@@ -17,7 +17,6 @@ function parseTree(tree, config) {
       // we need these two steps to handle properly absolute and relative paths
       // 1. relative from cwd (harmonize abs and rel)
       const pathFromCwd = path.relative(cwd, obj.path);
-      console.log(pathFromCwd);
       // 2. relative from the watched path
       const relPath = path.relative(config.path, pathFromCwd);
       // 3. then we just need to join publicDirectory w/ relpath to obtain the url
@@ -165,6 +164,10 @@ const pluginFactory = function(AbstractPlugin) {
 
     getValues() {
       return this.state.getValues();
+    }
+
+    get(name) {
+      return this.state.get(name);
     }
   }
 }
