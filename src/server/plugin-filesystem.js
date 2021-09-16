@@ -48,9 +48,17 @@ const pluginFactory = function(AbstractPlugin) {
     constructor(server, name, options) {
       super(server, name);
 
+      this.excludeDotFiles = /(^|[\/\\])\../; // dot files
+
       const defaults = {
         directories: [],
         debounce: 50,
+        // cf. https://www.npmjs.com/package/directory-tree
+        dirTreeOptions: {
+          attributes: ["size", "type", "extension"],
+          normalizePath: true,
+          exclude: this.excludeDotFiles,
+        }
       }
 
       this.options = this.configure(defaults, options);
@@ -82,17 +90,16 @@ const pluginFactory = function(AbstractPlugin) {
 
         return new Promise((resolve, reject) => {
           let watcher = null;
-          const excludeDotFiles = /(^|[\/\\])\../;
 
           const watch = async (firstLaunch = false) => {
             // initial tree update or after chokidar relaunch
-            let tree = dirTree(rootPath, { exclude: excludeDotFiles });
+            let tree = dirTree(rootPath, this.options.dirTreeOptions);
             tree = parseTree(tree, config);
             await this.state.set({ [config.name]: tree });
 
             // run chokidar.on('all') => getTree, parseTree
             const watcher = chokidar.watch(rootPath, {
-              ignored: excludeDotFiles, // ignore dotfiles
+              ignored: this.excludeDotFiles, // ignore dotfiles
               persistent: true,
               ignoreInitial: true,
             });
@@ -100,7 +107,7 @@ const pluginFactory = function(AbstractPlugin) {
             // @todo - add debounce function
             watcher.on('all', debounce((event, path) => {
               // update because of change
-              let tree = dirTree(rootPath, { exclude: excludeDotFiles });
+              let tree = dirTree(rootPath, this.options.dirTreeOptions);
               tree = parseTree(tree, config);
               this.state.set({ [config.name]: tree });
             }, this.options.debounce));
