@@ -1,7 +1,7 @@
 # `@soundworks/plugin-filesystem`
 
 > [`soundworks`](https://github.com/collective-soundworks/soundworks) plugin
-> to parse and watch directories and distribute their content the all clients
+> to parse and watch directories and distribute their contents to all clients
 > in real-time.
 
 ## Table of Contents
@@ -108,7 +108,7 @@ class MyExperience extends Experience {
 
 ### Getting current values and subscribing to changes
 
-The following API is similar client-side and server side
+The following API is the same on the client as well as the server side:
 
 ```js
 // get the current values of all registered directories
@@ -133,13 +133,13 @@ this.filesystem.subscribe(updates => {
 
 ### File tree format
 
-The plugin is built on top of the [node-directory-tree](https://github.com/mihneadb/node-directory-tree) library and therefore follows the format described [here](https://github.com/mihneadb/node-directory-tree#result). The only addition to the format is the addition of a `url` field on each node to simplify access of the resources to the clients.
+The plugin is built on top of the [node-directory-tree](https://github.com/mihneadb/node-directory-tree) library and therefore follows the format described [here](https://github.com/mihneadb/node-directory-tree#result). The only addition to the format is the addition of a `url` field on each node to simplify the access of the resources for the clients.
 
 ### Routing and `publicDirectory` option
 
-The `publicDirectory` options allows to create an valid `url` from the filesystem paths. It can be use in conjunction with `server.router.use` to open specific routes for static assets.
+The `publicDirectory` option allows to create an valid `url` from the filesystem paths. It can be use in conjunction with `server.router.use` to open specific routes for static assets.
 
-For example, let's consider a case where you watch the directory `/misc/audio` but want to publicly access the audio files through the `http://my.domain/audio/*.wav`. You can do the following:
+For example, let's consider a case where you watch the directory `/misc/audio` but want to publicly access the audio files through `http://my.domain/audio/*.wav`. You can do the following:
 
 ```js
 // server/index.js
@@ -159,7 +159,7 @@ Note that if `publicDirectory` is not defined in the configuration object, the `
 
 ### Watching a directory outside the project
 
-The plugin, and `url` strategy described above should even work with directories located at arbitrary location in your file system.
+The plugin and `url` strategy described above should even work with directories located at arbitrary locations in your file system.
 
 ## Credits
 
