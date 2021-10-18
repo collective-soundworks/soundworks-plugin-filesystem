@@ -4,6 +4,7 @@ import chokidar from 'chokidar';
 import dirTree from 'directory-tree';
 import mkdirp from 'mkdirp';
 import debounce from 'lodash.debounce';
+import normalize from 'normalize-path';
 
 const defaultSchema = {
 
@@ -19,8 +20,10 @@ function parseTree(tree, config) {
       const pathFromCwd = path.relative(cwd, obj.path);
       // 2. relative from the watched path
       const relPath = path.relative(config.path, pathFromCwd);
-      // 3. then we just need to join publicDirectory w/ relpath to obtain the url
-      let url = path.join(config.publicDirectory, relPath);
+      // 3. normalize according to platform (relPath could be in windows style)
+      const normalizedPath = normalize(relPath);
+      // 4. then we just need to join publicDirectory w/ relpath to obtain the url
+      let url = path.join(config.publicDirectory, normalizedPath);
 
       if (obj.type === 'directory') {
         url += '/';
@@ -104,11 +107,11 @@ const pluginFactory = function(AbstractPlugin) {
               ignoreInitial: true,
             });
 
-            // @todo - add debounce function
             watcher.on('all', debounce((event, path) => {
               // update because of change
               let tree = dirTree(rootPath, this.options.dirTreeOptions);
               tree = parseTree(tree, config);
+
               this.state.set({ [config.name]: tree });
             }, this.options.debounce));
 

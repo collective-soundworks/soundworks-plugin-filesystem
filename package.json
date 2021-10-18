@@ -23,7 +23,8 @@
   "dependencies": {
     "directory-tree": "^2.4.0",
     "lodash.debounce": "^4.0.8",
-    "mkdirp": "^1.0.4"
+    "mkdirp": "^1.0.4",
+    "normalize-path": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.15.4",
