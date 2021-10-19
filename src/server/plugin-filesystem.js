@@ -5,6 +5,7 @@ import dirTree from 'directory-tree';
 import mkdirp from 'mkdirp';
 import debounce from 'lodash.debounce';
 import normalize from 'normalize-path';
+import urljoin from 'url-join';
 
 const defaultSchema = {
 
@@ -23,7 +24,8 @@ function parseTree(tree, config) {
       // 3. normalize according to platform (relPath could be in windows style)
       const normalizedPath = normalize(relPath);
       // 4. then we just need to join publicDirectory w/ relpath to obtain the url
-      let url = path.join(config.publicDirectory, normalizedPath);
+      // @note: using `path.join` will renormalize back to \\ on windows
+      let url = urljoin(config.publicDirectory, normalizedPath);
 
       if (obj.type === 'directory') {
         url += '/';
