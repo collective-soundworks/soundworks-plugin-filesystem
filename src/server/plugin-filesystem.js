@@ -25,7 +25,7 @@ function parseTree(tree, config) {
       const normalizedPath = normalize(relPath);
       // 4. then we just need to join publicDirectory w/ relpath to obtain the url
       // @note: using `path.join` will renormalize back to \\ on windows
-      let url = urljoin(config.publicDirectory, normalizedPath);
+      let url = urljoin('/', config.publicDirectory, normalizedPath);
 
       if (obj.type === 'directory') {
         url += '/';
