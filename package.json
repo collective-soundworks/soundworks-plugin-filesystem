@@ -21,17 +21,17 @@
     "url": "https://github.com/collective-soundworks/soundworks-plugin-filesystem"
   },
   "dependencies": {
-    "directory-tree": "^2.4.0",
+    "chokidar": "^3.5.2",
+    "directory-tree": "^3.0.0",
     "lodash.debounce": "^4.0.8",
     "mkdirp": "^1.0.4",
     "normalize-path": "^3.0.0",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.15.4",
-    "@babel/core": "^7.15.5",
-    "@babel/plugin-transform-modules-commonjs": "^7.15.4",
-    "chokidar": "^3.5.2",
+    "@babel/cli": "^7.16.0",
+    "@babel/core": "^7.16.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.16.0",
     "chokidar-cli": "^3.0.0",
     "markdown-toc": "^1.2.0"
   }

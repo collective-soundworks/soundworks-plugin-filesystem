@@ -75,6 +75,7 @@ const pluginFactory = function(AbstractPlugin) {
           type: 'any',
           nullable: true,
           default: null,
+          filterChange: false,
         }
       });
 
@@ -85,6 +86,7 @@ const pluginFactory = function(AbstractPlugin) {
       this.state = await this.server.stateManager.create(`s:${this.name}`);
 
       this.started();
+      console.log('heho');
 
       const promises = this.options.directories.map(async (config) => {
         const rootPath = config.path;
