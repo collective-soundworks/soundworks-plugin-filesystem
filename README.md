@@ -115,7 +115,7 @@ The following API is the same on the client as well as the server side:
 const trees = this.filesystem.getValues();
 
 for (let name in trees) {
-  const tree = tree[name];
+  const tree = trees[name];
   console.log(name, tree);
 }
 
