@@ -6,6 +6,8 @@ import mkdirp from 'mkdirp';
 import debounce from 'lodash.debounce';
 import normalize from 'normalize-path';
 import urljoin from 'url-join';
+import fileUpload from 'express-fileupload';
+
 
 const defaultSchema = {
 
@@ -80,6 +82,8 @@ const pluginFactory = function(AbstractPlugin) {
       });
 
       this.server.stateManager.registerSchema(`s:${this.name}`, schema);
+
+      this.server.router.use(fileUpload());
     }
 
     async start() {
@@ -150,6 +154,27 @@ const pluginFactory = function(AbstractPlugin) {
           };
 
           watch(true); // init first watch
+
+
+          // uploading file
+          this.server.router.post(`/s-${this.name}-upload`, (req, res) => {
+            let dirPath;
+            if (req.body) {
+              dirPath = this.state.get(req.body.directory).path;
+            } else {
+              const dirName = this.options.directories[0].name;
+              dirPath = this.state.get(dirName).path;
+            }
+            Object.entries(req.files).forEach(([filename, file]) => {
+              const filePath = path.join(dirPath, filename);
+              fs.writeFile(filePath, file.data, (err) => {
+                if (err) {
+                  console.log('Error: ', err);
+                }
+              });
+            });
+          });
+
         });
 
       });
@@ -164,6 +189,19 @@ const pluginFactory = function(AbstractPlugin) {
 
     connect(client) {
       super.connect(client);
+
+      // deleting file
+      client.socket.addListener(`s:${this.name}:command`, data => {
+        switch (data.action) {
+          case 'delete':
+            if (data.payload.directory === null) {
+              this._delete(data.payload.filename);
+            } else {
+              this._delete(data.payload.directory, data.payload.filename);
+            }
+            break;
+        }
+      }) 
     }
 
     disconnect(client) {
@@ -182,6 +220,34 @@ const pluginFactory = function(AbstractPlugin) {
     get(name) {
       return this.state.get(name);
     }
+
+    _delete(...args) {
+      let filename, directory = null;
+      if (args.length === 1) {
+        filename = args[0];
+      } else if (args.length === 2) {
+        directory = args[0];
+        filename = args[1];
+      } else {
+        throw Error("@soundworks/plugin-filesystem's delete method only accepts 1 or 2 arguments");
+      }
+
+      let dirPath;
+      if (directory) {
+        dirPath = this.state.get(directory).path;
+      } else {
+        const dirName = this.options.directories[0].name;
+        dirPath = this.state.get(dirName).path;
+      }
+
+      const filePath = path.join(dirPath, filename);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.log('Error: ', err);
+        }
+      });
+    }
+
   }
 }
 

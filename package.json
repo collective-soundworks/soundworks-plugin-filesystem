@@ -23,6 +23,7 @@
   "dependencies": {
     "chokidar": "^3.5.2",
     "directory-tree": "^3.0.0",
+    "express-fileupload": "^1.4.0",
     "lodash.debounce": "^4.0.8",
     "mkdirp": "^1.0.4",
     "normalize-path": "^3.0.0",
