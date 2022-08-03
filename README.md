@@ -131,6 +131,27 @@ this.filesystem.subscribe(updates => {
 });
 ```
 
+### Uploading and deleting file from a client
+
+The plugin allows you to upload and delete files directly from a client 
+
+```js
+const files = {
+  'a.txt': fileA,
+  'b.json': fileB,
+}
+
+// This uploads the files to the first registered directory
+this.filesystem.upload(files); 
+// This uploads the files to the directory registered with the name `dir`
+this.filesystem.upload(dir, files); 
+
+// Similarly to delete a file 
+this.filesystem.delete(filename);
+this.filesystem.delete(dir, filename);
+```
+
+
 ### File tree format
 
 The plugin is built on top of the [node-directory-tree](https://github.com/mihneadb/node-directory-tree) library and therefore follows the format described [here](https://github.com/mihneadb/node-directory-tree#result). The only addition to the format is the addition of a `url` field on each node to simplify the access of the resources for the clients.
