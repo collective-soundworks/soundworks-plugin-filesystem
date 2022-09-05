@@ -18,6 +18,7 @@
     + [Registering the plugin](#registering-the-plugin-1)
     + [Requiring the plugin](#requiring-the-plugin-1)
   * [Getting current values and subscribing to changes](#getting-current-values-and-subscribing-to-changes)
+  * [Uploading and deleting file from a client](#uploading-and-deleting-file-from-a-client)
   * [File tree format](#file-tree-format)
   * [Routing and `publicDirectory` option](#routing-and-publicdirectory-option)
   * [Watching a directory outside the project](#watching-a-directory-outside-the-project)

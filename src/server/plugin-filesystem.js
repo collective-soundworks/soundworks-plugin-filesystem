@@ -8,14 +8,9 @@ import normalize from 'normalize-path';
 import urljoin from 'url-join';
 import fileUpload from 'express-fileupload';
 
-
-const defaultSchema = {
-
-}
-
 const cwd = process.cwd();
 
-function parseTree(tree, config) {
+function parseTree(tree, config, subpath) {
   if (config.publicDirectory) {
     function addUrl(obj) {
       // we need these two steps to handle properly absolute and relative paths
@@ -28,6 +23,10 @@ function parseTree(tree, config) {
       // 4. then we just need to join publicDirectory w/ relpath to obtain the url
       // @note: using `path.join` will renormalize back to \\ on windows
       let url = urljoin('/', config.publicDirectory, normalizedPath);
+      // 5. if subpath is defined we want to prepend it to the url too
+      if ((typeof subpath === 'string' || subpath instanceof String) && subpath !== '') {
+        url = urljoin(`/`, subpath, url);
+      }
 
       if (obj.type === 'directory') {
         url += '/';
@@ -47,15 +46,14 @@ function parseTree(tree, config) {
   return tree;
 }
 
-// class Node
-
 const pluginFactory = function(AbstractPlugin) {
-
   return class PluginFilesystem extends AbstractPlugin {
     constructor(server, name, options) {
       super(server, name);
 
       this.excludeDotFiles = /(^|[\/\\])\../; // dot files
+
+      console.log(server.config);
 
       const defaults = {
         directories: [],
@@ -65,13 +63,14 @@ const pluginFactory = function(AbstractPlugin) {
           attributes: ["size", "type", "extension"],
           normalizePath: true,
           exclude: this.excludeDotFiles,
-        }
+        },
+        subpath: server.config.env.subpath,
       }
 
       this.options = this.configure(defaults, options);
-      // regenerate schema from directories config
-      const schema = Object.assign({}, defaultSchema);
 
+      // generate schema from `config.directories`
+      const schema = {};
       this.options.directories.forEach(config => {
         schema[config.name] = {
           type: 'any',
@@ -104,7 +103,7 @@ const pluginFactory = function(AbstractPlugin) {
           const watch = async (firstLaunch = false) => {
             // initial tree update or after chokidar relaunch
             let tree = dirTree(rootPath, this.options.dirTreeOptions);
-            tree = parseTree(tree, config);
+            tree = parseTree(tree, config, this.options.subpath);
             await this.state.set({ [config.name]: tree });
 
             // run chokidar.on('all') => getTree, parseTree
@@ -117,7 +116,7 @@ const pluginFactory = function(AbstractPlugin) {
             watcher.on('all', debounce((event, path) => {
               // update because of change
               let tree = dirTree(rootPath, this.options.dirTreeOptions);
-              tree = parseTree(tree, config);
+              tree = parseTree(tree, config, this.options.subpath);
 
               this.state.set({ [config.name]: tree });
             }, this.options.debounce));
@@ -223,6 +222,7 @@ const pluginFactory = function(AbstractPlugin) {
 
     _delete(...args) {
       let filename, directory = null;
+
       if (args.length === 1) {
         filename = args[0];
       } else if (args.length === 2) {
