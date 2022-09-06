@@ -71,6 +71,7 @@ const pluginFactory = function(AbstractPlugin) {
 
       // generate schema from `config.directories`
       const schema = {};
+
       this.options.directories.forEach(config => {
         schema[config.name] = {
           type: 'any',
@@ -78,6 +79,8 @@ const pluginFactory = function(AbstractPlugin) {
           default: null,
           filterChange: false,
         }
+
+        // automatically open a route
       });
 
       this.server.stateManager.registerSchema(`s:${this.name}`, schema);
