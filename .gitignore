@@ -1,10 +1,6 @@
-# transpiled files
-/client
-/server
-/view
-
 # others
 /node_modules
+/tests/**/
 
 # junk files
 .DS_Store
@@ -12,3 +8,4 @@ Thumbs.db
 
 # ...
 NOTES.md
+API-v4.md

@@ -171,7 +171,7 @@ server.pluginManager.register('filesystem', pluginFilesystemFactory, {
   // default to `.data/scripts`
   directories: [{
       name: 'audio-files',
-      path: 'misc/audio,
+      path: 'misc/audio',
       publicDirectory: 'audio',
   }]
 }, []);

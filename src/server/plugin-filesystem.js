@@ -1,257 +1,433 @@
-import fs from 'fs';
-import path from 'path';
+import { existsSync, statSync, mkdirSync } from 'node:fs';
+import { writeFile, mkdir, rename, rm } from 'node:fs/promises';
+import path from 'node:path';
+
 import chokidar from 'chokidar';
 import dirTree from 'directory-tree';
-import mkdirp from 'mkdirp';
-import debounce from 'lodash.debounce';
-import normalize from 'normalize-path';
-import urljoin from 'url-join';
+import express from 'express';
 import fileUpload from 'express-fileupload';
+// @todo - remove in favor of @ircam/utils when it exists...
+import isPlainObj from 'is-plain-obj';
+import normalize from 'normalize-path';
 
 const cwd = process.cwd();
+// eslint-disable-next-line no-useless-escape
+const EXCLUDE_DOT_FILES = /(^|[\/\\])\../;
 
-function parseTree(tree, config, subpath) {
-  if (config.publicDirectory) {
-    function addUrl(obj) {
-      // we need these two steps to handle properly absolute and relative paths
-      // 1. relative from cwd (harmonize abs and rel)
-      const pathFromCwd = path.relative(cwd, obj.path);
-      // 2. relative from the watched path
-      const relPath = path.relative(config.path, pathFromCwd);
-      // 3. normalize according to platform (relPath could be in windows style)
-      const normalizedPath = normalize(relPath);
-      // 4. then we just need to join publicDirectory w/ relpath to obtain the url
-      // @note: using `path.join` will renormalize back to \\ on windows
-      let url = urljoin('/', config.publicDirectory, normalizedPath);
-      // 5. if subpath is defined we want to prepend it to the url too
-      if ((typeof subpath === 'string' || subpath instanceof String) && subpath !== '') {
-        url = urljoin(`/`, subpath, url);
-      }
-
-      if (obj.type === 'directory') {
-        url += '/';
-      }
-
-      obj.path = pathFromCwd; // better to not expose the server guts client-side
-      obj.url = url;
-
-      if (obj.children) {
-        obj.children.forEach(addUrl);
-      }
-    }
-
-    addUrl(tree);
-  }
-
-  return tree;
+// @todo - remove in favor of @ircam/utils when it exists...
+function isString(val) {
+  return (typeof val === 'string' || val instanceof String);
 }
 
-const pluginFactory = function(AbstractPlugin) {
-  return class PluginFilesystem extends AbstractPlugin {
-    constructor(server, name, options) {
-      super(server, name);
-
-      this.excludeDotFiles = /(^|[\/\\])\../; // dot files
-
-      console.log(server.config);
+const pluginFactory = function(Plugin) {
+  return class PluginFilesystem extends Plugin {
+    constructor(server, id, options = {}) {
+      super(server, id);
 
       const defaults = {
-        directories: [],
-        debounce: 50,
-        // cf. https://www.npmjs.com/package/directory-tree
-        dirTreeOptions: {
-          attributes: ["size", "type", "extension"],
-          normalizePath: true,
-          exclude: this.excludeDotFiles,
-        },
-        subpath: server.config.env.subpath,
-      }
+        dirname: null,
+        publicPath: null,
+      };
 
-      this.options = this.configure(defaults, options);
+      this.options = Object.assign({}, defaults, options);
+      // a state containing the file system infos
+      this._treeState = null;
+      // chokidar watchers
+      this._watcher = null;
+      // routes that have been opened
+      this._middleware = null;
+      // queue to batch file system events
+      this._eventQueue = [];
+      this._batchTimeout = null;
+      this._batchEventTimeoutDuration = 100; // in ms
 
-      // generate schema from `config.directories`
-      const schema = {};
-
-      this.options.directories.forEach(config => {
-        schema[config.name] = {
+      // generate schema from `config`
+      const schema = {
+        tree: {
           type: 'any',
           nullable: true,
           default: null,
           filterChange: false,
-        }
+        },
+        events: {
+          type: 'any',
+          event: true,
+        },
+      };
 
-        // automatically open a route
-      });
-
-      this.server.stateManager.registerSchema(`s:${this.name}`, schema);
-
+      this.server.stateManager.registerSchema(`s:${this.id}`, schema);
       this.server.router.use(fileUpload());
+
+      this._queueEvent = this._queueEvent.bind(this);
     }
 
     async start() {
-      this.state = await this.server.stateManager.create(`s:${this.name}`);
+      await super.start();
 
-      this.started();
+      this._treeState = await this.server.stateManager.create(`s:${this.id}`);
 
-      const promises = this.options.directories.map(async (config) => {
-        const rootPath = config.path;
+      // route for file upload
+      // @todo - make sure we can't upload a file outside option.dirname
+      // this.server.router.post(`/s-${this.id}-upload`, (req, res) => {
+      //   let dirPath;
 
-        if (!fs.existsSync(rootPath) || !fs.statSync(rootPath).isDirectory()) {
-          await mkdirp(rootPath);
-        }
+      //   if (req.body) {
+      //     dirPath = this._treeState.get(req.body.directory).path;
+      //   } else {
+      //     const dirName = this.options.directories[0].name;
+      //     dirPath = this._treeState.get(dirName).path;
+      //   }
 
-        return new Promise((resolve, reject) => {
-          let watcher = null;
+      //   Object.entries(req.files).forEach(([filename, file]) => {
+      //     const filePath = path.join(dirPath, filename);
+      //     fs.writeFile(filePath, file.data, (err) => {
+      //       if (err) {
+      //         console.log('Error: ', err);
+      //       }
+      //     });
+      //   });
+      // });
 
-          const watch = async (firstLaunch = false) => {
-            // initial tree update or after chokidar relaunch
-            let tree = dirTree(rootPath, this.options.dirTreeOptions);
-            tree = parseTree(tree, config, this.options.subpath);
-            await this.state.set({ [config.name]: tree });
+      await this.switch(this.options);
+    }
 
-            // run chokidar.on('all') => getTree, parseTree
-            const watcher = chokidar.watch(rootPath, {
-              ignored: this.excludeDotFiles, // ignore dotfiles
-              persistent: true,
-              ignoreInitial: true,
-            });
+    async stop() {
+      super.stop();
 
-            watcher.on('all', debounce((event, path) => {
-              // update because of change
-              let tree = dirTree(rootPath, this.options.dirTreeOptions);
-              tree = parseTree(tree, config, this.options.subpath);
+      if (this._watcher) {
+        this._watcher.close();
+      }
+    }
 
-              this.state.set({ [config.name]: tree });
-            }, this.options.debounce));
+    addClient(client) {
+      super.addClient(client);
 
-            watcher.on('ready', () => {
-              if (firstLaunch) {
-                resolve();
-              }
-            });
+      // // deleting file
+      // client.socket.addListener(`s:${this.name}:command`, data => {
+      //   switch (data.action) {
+      //     case 'delete':
+      //       if (data.payload.directory === null) {
+      //         this._delete(data.payload.filename);
+      //       } else {
+      //         this._delete(data.payload.directory, data.payload.filename);
+      //       }
+      //       break;
+      //   }
+      // });
+    }
 
-            watcher.on('error', (err) => {
-              console.log(`${this.name}: chokidar error watching ${rootPath}`);
-              console.error(err);
-              reject(err);
-            });
+    removeClient(client) {
+      super.removeClient(client);
+    }
 
-            // workaround `chokidar` problem
-            // we need to relaunch everything because when recreating
-            // a folder with the same name as one that as been previously
-            // unlinked, its content is not watched.
-            //
-            // @note - maybe its when creating a folder w/ content (but probably not)
-            // @todo - open an issue with a proper report file
-            const unlinkedDir = new Set();
+    /**
+     * Switch the filesystem to a new directory, e.g. to change project while
+     * keeping the same plugin and related logic at hand.
+     *
+     * @param {Object} options
+     * @param {String} [options.dirname=null] - directory to watch, plugin is idle
+     *  if null
+     * @param {String} [options.publicPath=null] - optionnal public path for the
+     *  assets. If set, a route will be added to the router to serve the assets and
+     *  an `url` entry will be added to each node of the tree.
+     */
+    async switch(options) {
+      if (!isPlainObj(options)) {
+        throw new Error(`[soundworks:PluginFilesystem] Invalid options, options should an object of type { dirname[, publicPath] }`);
+      }
 
-            watcher.on('unlinkDir', path => unlinkedDir.add(path));
+      if (!('dirname' in options)) {
+        throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.dirname", "options.dirname" is mandatory`);
+      }
 
-            watcher.on('addDir', path => {
-              if (unlinkedDir.has(path)) {
-                watcher.close();
-                watch(false);
-              }
-            });
-          };
+      if (!isString(options.dirname) && options.dirname !== null) {
+        throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.dirname", should be string or null`);
+      }
 
-          watch(true); // init first watch
+      this.options = Object.assign(this.options, options);
+      const { dirname, publicPath } = this.options;
 
+      // all good clean previous watcher and middleware
+      // clean watcher and route
+      if (this._watcher) {
+        this._watcher.close();
+        this._watcher = null;
+      }
 
-          // uploading file
-          this.server.router.post(`/s-${this.name}-upload`, (req, res) => {
-            let dirPath;
-            if (req.body) {
-              dirPath = this.state.get(req.body.directory).path;
-            } else {
-              const dirName = this.options.directories[0].name;
-              dirPath = this.state.get(dirName).path;
-            }
-            Object.entries(req.files).forEach(([filename, file]) => {
-              const filePath = path.join(dirPath, filename);
-              fs.writeFile(filePath, file.data, (err) => {
-                if (err) {
-                  console.log('Error: ', err);
-                }
-              });
-            });
-          });
-
+      // remove the middleware from express stack if it has already been registered
+      // @note - might be a bit touchy as we manipulate the express stack directly
+      if (this._middleware !== null) {
+        const index = this.server.router._router.stack.findIndex(layer => {
+          return layer.handle === this._middleware;
         });
 
-      });
-
-      try {
-        await Promise.all(promises);
-        this.ready();
-      } catch(err) {
-        this.error(err.message);
+        this.server.router._router.stack.splice(index, 1);
+        this._middleware = null;
       }
+
+      // nothing left to do, this filesystem is in idle state
+      if (dirname === null) {
+        return Promise.resolve();
+      }
+
+      // create directory if not exists
+      if (!existsSync(dirname) || !statSync(dirname).isDirectory()) {
+        mkdirSync(dirname, { recursive: true });
+      }
+
+      // Open a route for static assets if publicPath is defined.
+      //
+      // Allow to watch "public" directory and share urls but do not open a route,
+      // as this is already done in default template
+      //
+      // @todo review - This might not be what we want in all cases: what if we
+      // don't use default template? Maybe we should just ignore instead of throwing
+      // if some static route and middleware already exists for that publicPath.
+      if (publicPath !== null && publicPath !== '' && publicPath !== '/') {
+        if (!isString(publicPath)) {
+          throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", should be a string`);
+        }
+
+        // throw if a route already exists
+        this.server.router._router.stack.forEach(layer => {
+          if (layer.regexp.test(publicPath)) {
+            throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", "${publicPath}" route is already registered in "server.router"`);
+          }
+        });
+
+        const middleware = express.static(dirname);
+        // automatically create route for static assets
+        this.server.router.use(`/${publicPath.replace(/^\//, '')}`, middleware);
+
+        this._middleware = middleware;
+      }
+
+      // create new watcher
+      return new Promise((resolve, reject) => {
+        const watcher = chokidar.watch(dirname, {
+          ignored: EXCLUDE_DOT_FILES, // ignore dotfiles
+          persistent: true,
+          ignoreInitial: true,
+        });
+
+        watcher.on('all', this._queueEvent);
+
+        watcher.on('error', (err) => {
+          console.error(`[soundworks:PluginFilesystem:${this.id}] chokidar error watching ${dirname}`);
+          console.error(err);
+          reject(err);
+        });
+
+        watcher.on('ready', async () => {
+          const tree = this._parseTree();
+          await this._treeState.set({ tree });
+
+          resolve();
+        });
+
+        this._watcher = watcher;
+      });
     }
 
-    connect(client) {
-      super.connect(client);
+    getTree() {
+      return this._treeState.get('tree');
+    }
 
-      // deleting file
-      client.socket.addListener(`s:${this.name}:command`, data => {
-        switch (data.action) {
-          case 'delete':
-            if (data.payload.directory === null) {
-              this._delete(data.payload.filename);
-            } else {
-              this._delete(data.payload.directory, data.payload.filename);
+    findInTree(path, tree = null) {
+      if (tree === null) {
+        tree = this.getTree();
+      }
+
+      let leaf = null;
+
+      (function parse(node) {
+        if (node.path === path) {
+          leaf = node;
+          return;
+        }
+
+        if (node.children) {
+          for (let child of node.children) {
+            if (leaf !== null) {
+              break;
             }
-            break;
+
+            parse(child);
+          }
         }
-      }) 
+      }(tree));
+
+      return leaf;
     }
 
-    disconnect(client) {
-      super.disconnect(client);
+    onUpdate(callback, executeListener = false) {
+      return this._treeState.onUpdate(callback, executeListener);
     }
 
-    subscribe(callback) {
-      const unsubscribe = this.state.subscribe(callback);
-      return unsubscribe;
-    }
+    async writeFile(filename, data) {
+      const dirname = this.options.dirname;
+      filename = path.join(dirname, filename);
 
-    getValues() {
-      return this.state.getValues();
-    }
-
-    get(name) {
-      return this.state.get(name);
-    }
-
-    _delete(...args) {
-      let filename, directory = null;
-
-      if (args.length === 1) {
-        filename = args[0];
-      } else if (args.length === 2) {
-        directory = args[0];
-        filename = args[1];
-      } else {
-        throw Error("@soundworks/plugin-filesystem's delete method only accepts 1 or 2 arguments");
+      if (!this._checkInDir(filename)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot write file outside directory "${dirname}"`);
       }
 
-      let dirPath;
-      if (directory) {
-        dirPath = this.state.get(directory).path;
-      } else {
-        const dirName = this.options.directories[0].name;
-        dirPath = this.state.get(dirName).path;
-      }
-
-      const filePath = path.join(dirPath, filename);
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.log('Error: ', err);
-        }
-      });
+      await writeFile(filename, data);
     }
 
-  }
-}
+    async mkdir(filename) {
+      const dirname = this.options.dirname;
+      filename = path.join(dirname, filename);
+
+      if (!this._checkInDir(filename)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot create dir outside directory "${dirname}"`);
+      }
+
+      await mkdir(filename, { recursive: true });
+    }
+
+    async rename(oldPath, newPath) {
+      const dirname = this.options.dirname;
+      oldPath = path.join(dirname, oldPath);
+
+      if (!this._checkInDir(oldPath)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot rename from outside directory "${dirname}"`);
+      }
+
+      newPath = path.join(dirname, newPath);
+
+      if (!this._checkInDir(newPath)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot rename to outside directory "${dirname}"`);
+      }
+
+      await rename(oldPath, newPath);
+    }
+
+    async rm(filename) {
+      const dirname = this.options.dirname;
+      filename = path.join(dirname, filename);
+
+      if (!this._checkInDir(filename)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot remove file from outside directory "${dirname}"`);
+      }
+
+      await rm(filename);
+    }
+
+    _checkInDir(filename) {
+      const { dirname } = this.options;
+      const rel = path.relative(dirname, filename);
+
+      return !rel.startsWith('..');
+    }
+
+    _parseTree() {
+      // cf. https://www.npmjs.com/package/directory-tree
+      const dirTreeOptions = {
+        attributes: ['size', 'type', 'extension'],
+        normalizePath: true,
+        exclude: EXCLUDE_DOT_FILES,
+      };
+
+      const { dirname, publicPath } = this.options;
+      const tree = dirTree(dirname, dirTreeOptions);
+
+      // if options.publicPath is set add public urls to the tree
+      if (isString(publicPath)) {
+        // magically prepend subpath from env config
+        const subpath = this.server.config.env.subpath;
+
+        (function addUrl(node) {
+          // we need these two steps to properly handle absolute and relative paths
+          // i.e. if the dirname is declared as absolute (?)
+
+          // 1. relative from cwd (harmonize abs and rel)
+          const pathFromCwd = path.relative(cwd, node.path);
+          // 2. relative from the watched path
+          const relPath = path.relative(dirname, pathFromCwd);
+          // 3. normalize according to platform (relPath could be in windows backslash style)
+          const normalizedPath = normalize(relPath);
+          // 4. then we just need to join publicDirectory w/ relpath to obtain the url
+          let url = `/${publicPath}/${normalizedPath}`;
+          // 5. if subpath is defined we want to prepend it to the url too
+          if (isString(subpath) && subpath !== '') {
+            url = `/${subpath}/${url}`;
+          }
+
+          if (node.type === 'directory') {
+            url += '/';
+          }
+
+          // clean double slahes
+          url = url.replace(/\/+/g, '/');
+
+          node.path = pathFromCwd; // better to not expose the server guts client-side
+          node.url = url;
+
+          if (node.children) {
+            node.children.forEach(addUrl);
+          }
+        }(tree));
+      }
+
+      return tree;
+    }
+
+    _queueEvent(event, path) {
+      this._eventQueue.push([event, path]);
+
+      clearTimeout(this._batchTimeout);
+
+      this._batchTimeout = setTimeout(() => {
+        const oldTree = this.getTree();
+        const newTree = this._parseTree();
+
+        const events = this._eventQueue.map(([event, path]) => {
+          switch (event) {
+            case 'add':
+            case 'addDir': {
+              const node = this.findInTree(path, newTree);
+
+              if (node === null) {
+                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                return null;
+              }
+
+              return { type: 'create', node };
+            }
+            case 'change': {
+              const node = this.findInTree(path, newTree);
+
+              if (node === null) {
+                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                return null;
+              }
+
+              return { type: 'update', node };
+            }
+            case 'unlink':
+            case 'unlinkDir': {
+              const node = this.findInTree(path, oldTree);
+
+              if (node === null) {
+                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                return null;
+              }
+
+              return { type: 'delete', node };
+            }
+            default: {
+              console.warn(`[soundworks:PluginFilesytem] unparsed chokidar event: ${event} ${path}, ignore...`);
+              return null;
+            }
+          }
+        }).filter(e => e !== null);
+
+        this._eventQueue.length = 0; // reset queue
+        this._treeState.set({ tree: newTree, events });
+      }, this._batchEventTimeoutDuration);
+    }
+  };
+};
 
 export default pluginFactory;
