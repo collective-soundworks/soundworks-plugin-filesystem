@@ -1,0 +1,398 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { Blob } from 'node:buffer';
+
+
+import { assert } from 'chai';
+import express from 'express';
+// @note - native node global.fetch introduce weird problems and timeouts
+import fetch from 'node-fetch';
+
+import { Server } from '@soundworks/core/server.js';
+import { Client } from '@soundworks/core/client.js';
+
+import serverFilesystemPlugin from '../src/server/plugin-filesystem.js';
+import clientFilesystemPlugin from '../src/client/plugin-filesystem.js';
+
+const config = {
+  app: {
+    name: 'test-plugin-filesystem',
+    clients: {
+      test: { target: 'node' },
+    },
+  },
+  env: {
+    port: 8080,
+    serverAddress: '127.0.0.1',
+    useHttps: false,
+    verbose: false,
+  },
+};
+
+let server = null;
+const testFile = path.join('tests', 'assets', 'my-file.json');
+const fileData = { a: true }
+
+beforeEach(async () => {
+  // clean test files
+  [
+    path.join('tests', 'assets'),
+  ].forEach(testDir => {
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true });
+    }
+  });
+
+  // create test file
+  fs.mkdirSync('tests/assets');
+  fs.writeFileSync(testFile, JSON.stringify(fileData));
+
+  // launch server
+  server = new Server(config);
+  server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+    dirname: 'tests/assets',
+    publicPath: 'public',
+  });
+
+  await server.start();
+});
+
+afterEach(async () => {
+  await server.stop();
+});
+
+describe(`[client] PluginFilesystem`, () => {
+  describe('# plugin.constructor(server, id, name)', async () => {
+    it(`should register and start properly`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      assert.equal(filesystem.id, 'filesystem');
+
+      await client.stop();
+    });
+  });
+
+  describe('# plugin.getTree() -> FileTree', async () => {
+    it(`should retrieve the file tree`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const tree = filesystem.getTree();
+      // console.log(tree);
+
+      assert.equal(tree.path, 'tests/assets');
+      assert.equal(tree.name, 'assets');
+      assert.equal(tree.type, 'directory');
+      assert.equal(tree.url, '/public/');
+
+      assert.equal(tree.children.length, 1);
+      assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+      assert.equal(tree.children[0].name, 'my-file.json');
+      assert.equal(tree.children[0].type, 'file');
+      assert.equal(tree.children[0].url, '/public/my-file.json');
+
+      await client.stop();
+    });
+  });
+
+  describe('# plugin.findInTree(pathOrUrl, tree = null) -> FileTree', async () => {
+    it(`should find a node according to its path`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const node = filesystem.findInTree('tests/assets/my-file.json');
+
+      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.name, 'my-file.json');
+      assert.equal(node.type, 'file');
+      assert.equal(node.url, '/public/my-file.json');
+
+      await client.stop();
+    });
+
+    it(`should find a node according to its url`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const node = filesystem.findInTree('/public/my-file.json');
+
+      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.name, 'my-file.json');
+      assert.equal(node.extension, '.json');
+      assert.equal(node.type, 'file');
+      assert.equal(node.url, '/public/my-file.json');
+
+      await client.stop();
+    });
+  });
+
+  describe('# plugin.onUpdate(updates => {})', async () => {
+    it(`should retrieve the file tree`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let executed = false;
+      filesystem.onUpdate(updates => {
+        const { tree, events } = updates;
+
+        executed = true;
+
+        assert.equal(tree.path, 'tests/assets');
+        assert.equal(tree.name, 'assets');
+        assert.equal(tree.type, 'directory');
+        assert.equal(tree.url, '/public/');
+
+        assert.equal(tree.children.length, 1);
+        assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+        assert.equal(tree.children[0].name, 'my-file.json');
+        assert.equal(tree.children[0].type, 'file');
+        assert.equal(tree.children[0].url, '/public/my-file.json');
+
+        const event = events[0];
+        assert.equal(event.type, 'update');
+        assert.equal(event.node.path, 'tests/assets/my-file.json');
+        assert.equal(event.node.name, 'my-file.json');
+        assert.equal(event.node.extension, '.json');
+        assert.equal(event.node.type, 'file');
+        assert.equal(event.node.url, '/public/my-file.json');
+      });
+
+      fs.writeFileSync(testFile, 'coucou');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      await client.stop();
+
+      assert.equal(executed, true);
+    });
+  });
+
+  describe('# plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
+    it('should retrieve a filtered filename / url map', async () => {
+      // add some a file into assets
+      fs.writeFileSync('tests/assets/sound.wav', 'some audio file');
+      // await for the file change to be propagated
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      { // with leading dot
+        const fileMap = filesystem.getTreeAsUrlMap('.wav');
+        assert.equal(fileMap['sound'], '/public/sound.wav');
+      }
+
+      { // without leading dot
+        const fileMap = filesystem.getTreeAsUrlMap('wav');
+        assert.equal(fileMap['sound'], '/public/sound.wav');
+      }
+    });
+  });
+
+  describe('# await plugin.writeFile(filename, data)', () => {
+    it('should work with a string', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.writeFile('my-string.txt', 'coucou');
+
+      const exists = fs.existsSync('tests/assets/my-string.txt');
+      assert.equal(exists, true);
+      const txt = fs.readFileSync('tests/assets/my-string.txt');
+      assert.equal(txt, 'coucou');
+
+      await client.stop();
+    });
+
+    it('should work with a Blob', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const blob = new Blob(['<h1>coucou</h1>'], { type: 'text/html' });
+
+      await filesystem.writeFile('my-page.html', blob);
+
+      const exists = fs.existsSync('tests/assets/my-page.html');
+      assert.equal(exists, true);
+      const txt = fs.readFileSync('tests/assets/my-page.html');
+      assert.equal(txt, '<h1>coucou</h1>');
+
+      await client.stop();
+    });
+
+    it('should propagate errors back', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const blob = new Blob(['<h1>coucou</h1>'], { type: 'text/html' });
+
+      let errored = false;
+
+      try {
+        await filesystem.writeFile('../my-page.html', blob);
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+  });
+
+  describe('# await plugin.mkdir(filename)', () => {
+    it('should work with a string', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.mkdir('my-dir');
+
+      const exists = fs.existsSync('tests/assets/my-dir');
+      assert.equal(exists, true);
+
+      await client.stop();
+    });
+
+    it('should propagate errors back', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.mkdir('../my-dir');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+  });
+
+  describe('# await plugin.rename(oldPath, newPath)', () => {
+    it('should work with a string', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.rename('my-file.json', 'my-file-renamed.json');
+
+      {
+        const exists = fs.existsSync('tests/assets/my-file.json');
+        assert.equal(exists, false);
+      }
+
+      {
+        const exists = fs.existsSync('tests/assets/my-file-renamed.json');
+        assert.equal(exists, true);
+      }
+
+      await client.stop();
+    });
+
+    it('should propagate errors back', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.rename('my-file.json', '../my-file.json');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+  });
+
+  describe('# await plugin.rm(filename)', () => {
+    it('should work with a string', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.rm('my-file.json');
+
+      const exists = fs.existsSync('tests/assets/my-file.json');
+      assert.equal(exists, false);
+
+      await client.stop();
+    });
+
+    it('should propagate errors back', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.rm('../my-file.json');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+  });
+});

@@ -55,7 +55,7 @@ const pluginFactory = function(Plugin) {
         },
       };
 
-      this.server.stateManager.registerSchema(`s:${this.id}`, schema);
+      this.server.stateManager.registerSchema(`sw:plugin:${this.id}`, schema);
       this.server.router.use(fileUpload());
 
       this._queueEvent = this._queueEvent.bind(this);
@@ -64,29 +64,34 @@ const pluginFactory = function(Plugin) {
     async start() {
       await super.start();
 
-      this._treeState = await this.server.stateManager.create(`s:${this.id}`);
+      this._treeState = await this.server.stateManager.create(`sw:plugin:${this.id}`);
 
-      // route for file upload
-      // @todo - make sure we can't upload a file outside option.dirname
-      // this.server.router.post(`/s-${this.id}-upload`, (req, res) => {
-      //   let dirPath;
+      // writeFile route for Blob and File
+      // if config.env.protectedRoute disable all sensitive routes for clients
+      // open post only that are not connected
 
-      //   if (req.body) {
-      //     dirPath = this._treeState.get(req.body.directory).path;
-      //   } else {
-      //     const dirName = this.options.directories[0].name;
-      //     dirPath = this._treeState.get(dirName).path;
-      //   }
+      this.server.router.post(`/sw/plugin/${this.id}/upload`, async (req, res) => {
+        const clientId = parseInt(req.body.clientId);
+        const reqId = parseInt(req.body.reqId);
+        const [filename, file] = Object.entries(req.files)[0];
+        // find the client who triggered the post
+        const client = Array.from(this.clients).find(client => client.id === clientId);
 
-      //   Object.entries(req.files).forEach(([filename, file]) => {
-      //     const filePath = path.join(dirPath, filename);
-      //     fs.writeFile(filePath, file.data, (err) => {
-      //       if (err) {
-      //         console.log('Error: ', err);
-      //       }
-      //     });
-      //   });
-      // });
+        if (!client) {
+          res.status(404).end();
+          client.socket.send(`sw:plugin:${this.name}:err`, reqId, '[soundworks:PluginFilesystem] Unknown client');
+        }
+
+        // we can send the http response now, as we are acknowledging though sockets
+        res.end();
+
+        try {
+          await this.writeFile(filename, file.data);
+          client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+        } catch (err) {
+          client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+        }
+      });
 
       await this.switch(this.options);
     }
@@ -102,21 +107,76 @@ const pluginFactory = function(Plugin) {
     addClient(client) {
       super.addClient(client);
 
-      // // deleting file
-      // client.socket.addListener(`s:${this.name}:command`, data => {
-      //   switch (data.action) {
-      //     case 'delete':
-      //       if (data.payload.directory === null) {
-      //         this._delete(data.payload.filename);
-      //       } else {
-      //         this._delete(data.payload.directory, data.payload.filename);
-      //       }
-      //       break;
-      //   }
-      // });
+      // writeFile, mkdir, rename and delete from clients
+      client.socket.addListener(`sw:plugin:${this.name}:req`, async (reqId, data) => {
+        const { action, payload } = data;
+
+        switch (action) {
+          case 'writeFile': {
+            const { filename, data } = payload;
+
+            try {
+              await this.writeFile(filename, data);
+              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+            } catch (err) {
+              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+            }
+            break;
+          }
+          case 'mkdir': {
+            const { filename } = payload;
+
+            try {
+              await this.mkdir(filename);
+              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+            } catch (err) {
+              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+            }
+            break;
+          }
+          case 'rename': {
+            const { oldPath, newPath } = payload;
+
+            try {
+              await this.rename(oldPath, newPath);
+              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+            } catch (err) {
+              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+            }
+            break;
+          }
+          case 'rm': {
+            const { filename } = payload;
+
+            try {
+              await this.rm(filename);
+              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+            } catch (err) {
+              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+            }
+            break;
+          }
+          case 'delete':
+            if (data.payload.directory === null) {
+              this._delete(data.payload.filename);
+            } else {
+              this._delete(data.payload.directory, data.payload.filename);
+            }
+            break;
+        }
+      });
     }
 
     removeClient(client) {
+      client.soscket.removeAllListeners(`sw:plugin:${this.name}:req`);
+
+      const index = this.server.router._router.stack.findIndex(layer => {
+        return layer.handle === this._upload;
+      });
+
+      console.log(index);
+      this.server.router._router.stack.splice(index, 1);
+
       super.removeClient(client);
     }
 
@@ -229,6 +289,10 @@ const pluginFactory = function(Plugin) {
       });
     }
 
+    onUpdate(callback, executeListener = false) {
+      return this._treeState.onUpdate(callback, executeListener);
+    }
+
     getTree() {
       return this._treeState.get('tree');
     }
@@ -258,10 +322,6 @@ const pluginFactory = function(Plugin) {
       }(tree));
 
       return leaf;
-    }
-
-    onUpdate(callback, executeListener = false) {
-      return this._treeState.onUpdate(callback, executeListener);
     }
 
     async writeFile(filename, data) {
