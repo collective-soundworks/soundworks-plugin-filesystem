@@ -1,0 +1,5 @@
+{
+  "name": "filesystem-gui",
+  "eslint": true,
+  "language": "js"
+}

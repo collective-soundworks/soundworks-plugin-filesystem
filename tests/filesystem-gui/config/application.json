@@ -1,0 +1,10 @@
+{
+  name: 'filesystem-gui',
+  author: '',
+  clients: {
+    manager: {
+      target: 'browser',
+      default: true,
+    },
+  },
+}
