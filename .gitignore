@@ -1,6 +1,10 @@
 # others
 /node_modules
-/tests/**/
+
+# directories used for testing
+/tests/assets
+/tests/manual
+/tests/public
 
 # junk files
 .DS_Store

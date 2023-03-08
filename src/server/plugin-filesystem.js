@@ -8,6 +8,7 @@ import express from 'express';
 import fileUpload from 'express-fileupload';
 // @todo - remove in favor of @ircam/utils when it exists...
 import isPlainObj from 'is-plain-obj';
+import mime from 'mime-types';
 import normalize from 'normalize-path';
 
 const cwd = process.cwd();
@@ -79,7 +80,7 @@ const pluginFactory = function(Plugin) {
 
         if (!client) {
           res.status(404).end();
-          client.socket.send(`sw:plugin:${this.name}:err`, reqId, '[soundworks:PluginFilesystem] Unknown client');
+          client.socket.send(`sw:plugin:${this.id}:err`, reqId, '[soundworks:PluginFilesystem] Unknown client');
         }
 
         // we can send the http response now, as we are acknowledging though sockets
@@ -87,9 +88,9 @@ const pluginFactory = function(Plugin) {
 
         try {
           await this.writeFile(filename, file.data);
-          client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+          client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
         } catch (err) {
-          client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+          client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
         }
       });
 
@@ -108,7 +109,7 @@ const pluginFactory = function(Plugin) {
       super.addClient(client);
 
       // writeFile, mkdir, rename and delete from clients
-      client.socket.addListener(`sw:plugin:${this.name}:req`, async (reqId, data) => {
+      client.socket.addListener(`sw:plugin:${this.id}:req`, async (reqId, data) => {
         const { action, payload } = data;
 
         switch (action) {
@@ -117,9 +118,9 @@ const pluginFactory = function(Plugin) {
 
             try {
               await this.writeFile(filename, data);
-              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+              client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
-              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+              client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
             }
             break;
           }
@@ -128,9 +129,9 @@ const pluginFactory = function(Plugin) {
 
             try {
               await this.mkdir(filename);
-              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+              client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
-              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+              client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
             }
             break;
           }
@@ -139,9 +140,9 @@ const pluginFactory = function(Plugin) {
 
             try {
               await this.rename(oldPath, newPath);
-              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+              client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
-              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+              client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
             }
             break;
           }
@@ -150,9 +151,9 @@ const pluginFactory = function(Plugin) {
 
             try {
               await this.rm(filename);
-              client.socket.send(`sw:plugin:${this.name}:ack`, reqId);
+              client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
-              client.socket.send(`sw:plugin:${this.name}:err`, reqId, err.message);
+              client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
             }
             break;
           }
@@ -168,14 +169,7 @@ const pluginFactory = function(Plugin) {
     }
 
     removeClient(client) {
-      client.soscket.removeAllListeners(`sw:plugin:${this.name}:req`);
-
-      const index = this.server.router._router.stack.findIndex(layer => {
-        return layer.handle === this._upload;
-      });
-
-      console.log(index);
-      this.server.router._router.stack.splice(index, 1);
+      client.socket.removeAllListeners(`sw:plugin:${this.id}:req`);
 
       super.removeClient(client);
     }
@@ -392,21 +386,29 @@ const pluginFactory = function(Plugin) {
       const { dirname, publicPath } = this.options;
       const tree = dirTree(dirname, dirTreeOptions);
 
-      // if options.publicPath is set add public urls to the tree
-      if (isString(publicPath)) {
-        // magically prepend subpath from env config
-        const subpath = this.server.config.env.subpath;
+      // to magically prepend subpath from env config
+      const subpath = this.server.config.env.subpath;
 
-        (function addUrl(node) {
-          // we need these two steps to properly handle absolute and relative paths
-          // i.e. if the dirname is declared as absolute (?)
+      (function addInfos(node) {
+        // we need these two steps to properly handle absolute and relative paths
+        // i.e. if the dirname is declared as absolute (?)
 
-          // 1. relative from cwd (harmonize abs and rel)
-          const pathFromCwd = path.relative(cwd, node.path);
-          // 2. relative from the watched path
-          const relPath = path.relative(dirname, pathFromCwd);
-          // 3. normalize according to platform (relPath could be in windows backslash style)
-          const normalizedPath = normalize(relPath);
+        // 1. relative from cwd (harmonize abs and rel)
+        const pathFromCwd = path.relative(cwd, node.path);
+        // 2. relative from the watched path
+        const relPath = path.relative(dirname, pathFromCwd);
+        // 3. normalize according to platform (relPath could be in windows backslash style)
+        const normalizedPath = normalize(relPath);
+
+        if (node.type === 'file') {
+          node.mimeType = mime.lookup(node.path);
+        }
+
+        node.path = pathFromCwd; // better to not expose the server guts client-side
+        node.relPath = relPath;
+
+
+        if (isString(publicPath)) {
           // 4. then we just need to join publicDirectory w/ relpath to obtain the url
           let url = `/${publicPath}/${normalizedPath}`;
           // 5. if subpath is defined we want to prepend it to the url too
@@ -421,14 +423,13 @@ const pluginFactory = function(Plugin) {
           // clean double slahes
           url = url.replace(/\/+/g, '/');
 
-          node.path = pathFromCwd; // better to not expose the server guts client-side
           node.url = url;
+        }
 
-          if (node.children) {
-            node.children.forEach(addUrl);
-          }
-        }(tree));
-      }
+        if (node.children) {
+          node.children.forEach(addInfos);
+        }
+      }(tree));
 
       return tree;
     }

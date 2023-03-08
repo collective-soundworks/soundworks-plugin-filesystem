@@ -13,7 +13,7 @@ import { Server } from '@soundworks/core/server.js';
 import { Client } from '@soundworks/core/client.js';
 
 import serverFilesystemPlugin from '../src/server/plugin-filesystem.js';
-import clientFilesystemPlugin from '../src/client/plugin-filesystem.js';
+import clientFilesystemPlugin from '../src/client/plugin-filesystem-node.js';
 
 const config = {
   app: {
@@ -30,39 +30,41 @@ const config = {
   },
 };
 
-let server = null;
-const testFile = path.join('tests', 'assets', 'my-file.json');
-const fileData = { a: true }
-
-beforeEach(async () => {
-  // clean test files
-  [
-    path.join('tests', 'assets'),
-  ].forEach(testDir => {
-    if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true });
-    }
-  });
-
-  // create test file
-  fs.mkdirSync('tests/assets');
-  fs.writeFileSync(testFile, JSON.stringify(fileData));
-
-  // launch server
-  server = new Server(config);
-  server.pluginManager.register('filesystem', serverFilesystemPlugin, {
-    dirname: 'tests/assets',
-    publicPath: 'public',
-  });
-
-  await server.start();
-});
-
-afterEach(async () => {
-  await server.stop();
-});
-
 describe(`[client] PluginFilesystem`, () => {
+  let server = null;
+  const testFile = path.join('tests', 'assets', 'my-file.json');
+  const fileData = { a: true }
+
+  beforeEach(async () => {
+    // clean test files
+    [
+      path.join('tests', 'assets'),
+    ].forEach(testDir => {
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true });
+      }
+    });
+
+    // create test file
+    fs.mkdirSync('tests/assets');
+    fs.writeFileSync(testFile, JSON.stringify(fileData));
+
+    // launch server
+    server = new Server(config);
+    server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+      dirname: 'tests/assets',
+      publicPath: 'public',
+    });
+
+    await server.start();
+  });
+
+  afterEach(async () => {
+    fs.rmSync(path.join('tests', 'assets'), { recursive: true });
+    await server.stop();
+  });
+
+
   describe('# plugin.constructor(server, id, name)', async () => {
     it(`should register and start properly`, async () => {
       const client = new Client({ role: 'test', ...config });
@@ -249,6 +251,11 @@ describe(`[client] PluginFilesystem`, () => {
     });
 
     it('should propagate errors back', async () => {
+      {
+        const exists = fs.existsSync('tests/assets/my-page.html');
+        assert.equal(exists, false);
+      }
+
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
 
@@ -269,6 +276,8 @@ describe(`[client] PluginFilesystem`, () => {
       if (!errored) {
         assert.fail('should have thrown');
       }
+
+      client.stop();
     });
   });
 
