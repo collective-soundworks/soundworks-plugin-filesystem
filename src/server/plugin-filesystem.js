@@ -385,14 +385,13 @@ const pluginFactory = function(Plugin) {
 
       const { dirname, publicPath } = this.options;
       const tree = dirTree(dirname, dirTreeOptions);
-
       // to magically prepend subpath from env config
       const subpath = this.server.config.env.subpath;
 
-      (function addInfos(node) {
+      function addInfos(node) {
         // we need these two steps to properly handle absolute and relative paths
         // i.e. if the dirname is declared as absolute (?)
-
+        //
         // 1. relative from cwd (harmonize abs and rel)
         const pathFromCwd = path.relative(cwd, node.path);
         // 2. relative from the watched path
@@ -406,7 +405,6 @@ const pluginFactory = function(Plugin) {
 
         node.path = pathFromCwd; // better to not expose the server guts client-side
         node.relPath = relPath;
-
 
         if (isString(publicPath)) {
           // 4. then we just need to join publicDirectory w/ relpath to obtain the url
@@ -429,7 +427,12 @@ const pluginFactory = function(Plugin) {
         if (node.children) {
           node.children.forEach(addInfos);
         }
-      }(tree));
+      }
+
+      // can happen if the root directory is deleted
+      if (tree !== null) {
+        addInfos(tree);
+      }
 
       return tree;
     }
