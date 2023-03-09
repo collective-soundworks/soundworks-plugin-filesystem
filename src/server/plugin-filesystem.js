@@ -206,11 +206,11 @@ const pluginFactory = function(Plugin) {
       // remove the middleware from express stack if it has already been registered
       // @note - might be a bit touchy as we manipulate the express stack directly
       if (this._middleware !== null) {
-        const index = this.server.router._router.stack.findIndex(layer => {
+        const index = this.server.router.stack.findIndex(layer => {
           return layer.handle === this._middleware;
         });
 
-        this.server.router._router.stack.splice(index, 1);
+        this.server.router.stack.splice(index, 1);
         this._middleware = null;
       }
 
@@ -238,7 +238,7 @@ const pluginFactory = function(Plugin) {
         }
 
         // throw if a route already exists
-        this.server.router._router.stack.forEach(layer => {
+        this.server.router.stack.forEach(layer => {
           if (layer.regexp.test(publicPath)) {
             throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", "${publicPath}" route is already registered in "server.router"`);
           }
