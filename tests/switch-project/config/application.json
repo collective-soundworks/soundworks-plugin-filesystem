@@ -1,0 +1,10 @@
+{
+  name: 'switch-project',
+  author: '',
+  clients: {
+    player: {
+      target: 'browser',
+      default: true,
+    },
+  },
+}

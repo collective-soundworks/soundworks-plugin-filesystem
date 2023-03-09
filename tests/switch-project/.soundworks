@@ -1,0 +1,5 @@
+{
+  "name": "switch-project",
+  "eslint": true,
+  "language": "js"
+}

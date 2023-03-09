@@ -28,6 +28,7 @@ const pluginFactory = function(Plugin) {
       const defaults = {
         dirname: null,
         publicPath: null,
+        depth: undefined, // match chokidar default
       };
 
       this.options = Object.assign({}, defaults, options);
@@ -199,7 +200,7 @@ const pluginFactory = function(Plugin) {
       }
 
       this.options = Object.assign(this.options, options);
-      const { dirname, publicPath } = this.options;
+      const { dirname, publicPath, depth } = this.options;
 
       // all good clean previous watcher and middleware
       // clean watcher and route
@@ -258,11 +259,14 @@ const pluginFactory = function(Plugin) {
 
       // create new watcher
       return new Promise((resolve, reject) => {
-        const watcher = chokidar.watch(dirname, {
+        const options = {
           ignored: EXCLUDE_DOT_FILES, // ignore dotfiles
           persistent: true,
           ignoreInitial: true,
-        });
+          depth: depth,
+        };
+
+        const watcher = chokidar.watch(dirname, options);
 
         watcher.on('all', this._queueEvent);
 
@@ -376,14 +380,26 @@ const pluginFactory = function(Plugin) {
     }
 
     _parseTree() {
+      const { dirname, publicPath, depth } = this.options;
       // cf. https://www.npmjs.com/package/directory-tree
-      const dirTreeOptions = {
-        attributes: ['size', 'type', 'extension'],
-        normalizePath: true,
-        exclude: EXCLUDE_DOT_FILES,
-      };
 
-      const { dirname, publicPath } = this.options;
+      let dirTreeOptions;
+      // directory-tree: Usage of size attribute with depth option is prohibited.
+      if (depth === undefined) {
+        dirTreeOptions = {
+          attributes: ['size', 'type', 'extension'],
+          normalizePath: true,
+          exclude: EXCLUDE_DOT_FILES,
+        };
+      } else {
+        dirTreeOptions = {
+          attributes: ['type', 'extension'],
+          normalizePath: true,
+          exclude: EXCLUDE_DOT_FILES,
+          depth: depth + 1, // directory-tree does not behave as chokidar for depth
+        };
+      }
+
       const tree = dirTree(dirname, dirTreeOptions);
       // to magically prepend subpath from env config
       const subpath = this.server.config.env.subpath;
@@ -453,7 +469,9 @@ const pluginFactory = function(Plugin) {
               const node = this.findInTree(path, newTree);
 
               if (node === null) {
-                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                // this can occur for example when a directory with files is created
+                //  at once and depth options is not supposed to track the inner files
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
                 return null;
               }
 
@@ -463,7 +481,9 @@ const pluginFactory = function(Plugin) {
               const node = this.findInTree(path, newTree);
 
               if (node === null) {
-                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                // this can occur for example when a directory with files is created
+                //  at once and depth options is not supposed to track the inner files
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
                 return null;
               }
 
@@ -474,14 +494,16 @@ const pluginFactory = function(Plugin) {
               const node = this.findInTree(path, oldTree);
 
               if (node === null) {
-                console.warn(`[soundworks:PluginFilesytem] node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                // this can occur for example when a directory with files is created
+                //  at once and depth options is not supposed to track the inner files
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
                 return null;
               }
 
               return { type: 'delete', node };
             }
             default: {
-              console.warn(`[soundworks:PluginFilesytem] unparsed chokidar event: ${event} ${path}, ignore...`);
+              console.warn(`[soundworks:PluginFilesytem] ${this.id} - unparsed chokidar event: ${event} ${path}, ignore...`);
               return null;
             }
           }

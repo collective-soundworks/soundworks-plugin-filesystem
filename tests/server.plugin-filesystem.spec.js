@@ -37,16 +37,16 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  afterEach(() => {
-    [
-      path.join('tests', 'assets'),
-      path.join('tests', 'public'),
-    ].forEach(testDir => {
-      if (fs.existsSync(testDir)) {
-        fs.rmSync(testDir, { recursive: true });
-      }
-    });
-  });
+  // afterEach(() => {
+  //   [
+  //     path.join('tests', 'assets'),
+  //     path.join('tests', 'public'),
+  //   ].forEach(testDir => {
+  //     if (fs.existsSync(testDir)) {
+  //       fs.rmSync(testDir, { recursive: true });
+  //     }
+  //   });
+  // });
 
   describe('# plugin.constructor(server, id, options)', async () => {
     it(`should support no options`, async () => {
@@ -394,6 +394,45 @@ describe(`[server] PluginFilesystem`, () => {
 
       await server.stop();
     });
+
+    it(`should handle "option.depth"`, async () => {
+      const projectAPath = path.join('tests', 'assets', 'project-a');
+      fs.mkdirSync(projectAPath, { recursive: true });
+      fs.writeFileSync(path.join(projectAPath, 'a.txt'), 'coucou project A');
+
+      const projectBPath = path.join('tests', 'assets', 'project-b');
+      fs.mkdirSync(projectBPath, { recursive: true });
+      fs.writeFileSync(path.join(projectBPath, 'b.txt'), 'coucou project A');
+
+      // wait to clean remaining fs events from previous tests
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+        depth: 0,
+      });
+
+      await server.start();
+
+      const filesystem = await server.pluginManager.get('filesystem');
+      const tree = filesystem.getTree();
+
+      tree.children.forEach(node => {
+        assert.equal(node.type,  'directory');
+        assert.equal('children' in node, false);
+      });
+
+      // make sure chokidar does not watch innner files
+      let updateTriggered = false;
+      filesystem.onUpdate(() => updateTriggered = true);
+      fs.writeFileSync(path.join(projectAPath, 'a.txt'), 'changed project A');
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      assert.equal(updateTriggered, false);
+
+      await server.stop();
+    })
   });
 
   describe(`# plugin.getTree() -> FileTree`, () => {
