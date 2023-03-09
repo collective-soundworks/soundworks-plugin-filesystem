@@ -2,23 +2,17 @@ import { existsSync, statSync, mkdirSync } from 'node:fs';
 import { writeFile, mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 
+import { isPlainObject, isString } from '@ircam/sc-utils';
 import chokidar from 'chokidar';
 import dirTree from 'directory-tree';
 import express from 'express';
 import fileUpload from 'express-fileupload';
-// @todo - remove in favor of @ircam/utils when it exists...
-import isPlainObj from 'is-plain-obj';
 import mime from 'mime-types';
 import normalize from 'normalize-path';
 
 const cwd = process.cwd();
 // eslint-disable-next-line no-useless-escape
 const EXCLUDE_DOT_FILES = /(^|[\/\\])\../;
-
-// @todo - remove in favor of @ircam/utils when it exists...
-function isString(val) {
-  return (typeof val === 'string' || val instanceof String);
-}
 
 const pluginFactory = function(Plugin) {
   return class PluginFilesystem extends Plugin {
@@ -187,7 +181,7 @@ const pluginFactory = function(Plugin) {
      *  an `url` entry will be added to each node of the tree.
      */
     async switch(options) {
-      if (!isPlainObj(options)) {
+      if (!isPlainObject(options)) {
         throw new Error(`[soundworks:PluginFilesystem] Invalid options, options should an object of type { dirname[, publicPath] }`);
       }
 

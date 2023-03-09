@@ -1,24 +1,8 @@
-function isString(val) {
-  return (typeof val === 'string' || val instanceof String);
-}
+import { isString, isBrowser, idGenerator } from '@ircam/sc-utils';
 
-function* idGenerator() {
-  for (let i = 0; true; i++) {
-    if (i === Number.MAX_SAFE_INTEGER) {
-      i = 0;
-    }
-
-    yield i;
-  }
-}
-
-const isBrowser = new Function('try {return this===window;}catch(e){ return false;}');
-
-// Blob is global in node.js and File is instance of Blob, no need to polyfill
-// 03/2023 : Use userland fetch because node globals.fetch is still experimental (and buggy)
-
-// @note - this does not compile with babal and webpack
-// consider using isomorphic fetch
+// @notes 03/2023:
+// - Blob is global in node.js and File is instance of Blob, no need to polyfill
+// - Use userland fetch because node globals.fetch is still experimental (and buggy)
 
 export default (fetch, FormData) => {
   return function pluginFactory(Plugin) {
