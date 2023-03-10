@@ -17,7 +17,7 @@
   "type": "module",
   "exports": {
     "./client.js": {
-      "module": "./src/client/plugin-filesystem.js",
+      "module": "./src/client/plugin-filesystem-module.js",
       "node": "./src/client/plugin-filesystem-node.js"
     },
     "./server.js": "./src/server/plugin-filesystem.js"
