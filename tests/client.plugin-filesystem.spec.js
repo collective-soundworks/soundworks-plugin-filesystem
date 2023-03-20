@@ -369,7 +369,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.rm(filename)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', clientFilesystemPlugin);
 
       await client.start();
 
@@ -403,5 +403,157 @@ describe(`[client] PluginFilesystem`, () => {
         assert.fail('should have thrown');
       }
     });
+  });
+});
+
+describe(`[client] PluginFilesystem (protected)`, () => {
+  let server = null;
+
+  const config = {
+    app: {
+      name: 'test-plugin-filesystem',
+      clients: {
+        test: { target: 'node' },
+      },
+    },
+    env: {
+      type: 'production',
+      port: 8080,
+      serverAddress: '127.0.0.1',
+      useHttps: false,
+      verbose: false,
+    },
+  };
+
+  beforeEach(async () => {
+    // clean test files
+    [
+      path.join('tests', 'assets'),
+    ].forEach(testDir => {
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true });
+      }
+    });
+
+    // launch server in production mode
+    server = new Server(config);
+    server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+      dirname: 'tests/assets',
+    });
+
+    await server.start();
+  });
+
+  afterEach(async () => {
+    fs.rmSync(path.join('tests', 'assets'), { recursive: true });
+    await server.stop();
+  });
+
+  it('should block all sensitive commands in production if not trusted', async () => {
+    const client = new Client({ role: 'test', ...config });
+    client.pluginManager.register('filesystem', clientFilesystemPlugin);
+    await client.start();
+
+    const filesystem = await client.pluginManager.get('filesystem');
+
+    // write file
+    {
+      let writeFileErrored = false;
+
+      try {
+        await filesystem.writeFile('my-file.txt', 'my-file');
+      } catch (err) {
+        console.log(err.message);
+        writeFileErrored = true;
+      }
+
+      const fileExists = fs.existsSync(path.join('tests', 'assets', 'my-file.txt'));
+      assert.equal(fileExists, false);
+
+      if (!writeFileErrored) {
+        assert.fail('writeFile should have fail');
+      }
+    }
+
+    // mkdir
+    {
+      let mkdirError = false;
+
+      try {
+        await filesystem.mkdir('my-dir');
+      } catch (err) {
+        console.log(err.message);
+        mkdirError = true;
+      }
+
+      const dirExists = fs.existsSync(path.join('tests', 'assets', 'my-dir'));
+      assert.equal(dirExists, false);
+
+      if (!mkdirError) {
+        assert.fail('writeFile should have fail');
+      }
+    }
+
+    // rename
+    {
+      let renameError = false;
+      fs.writeFileSync(path.join('tests', 'assets', 'a.txt'), 'coucou');
+
+      try {
+        await filesystem.rename('a.txt', 'b.txt');
+      } catch (err) {
+        console.log(err.message);
+        renameError = true;
+      }
+
+      const aExists = fs.existsSync(path.join('tests', 'assets', 'a.txt'));
+      assert.equal(aExists, true);
+
+      const bExists = fs.existsSync(path.join('tests', 'assets', 'b.txt'));
+      assert.equal(bExists, false);
+
+      if (!renameError) {
+        assert.fail('writeFile should have fail');
+      }
+    }
+
+    // rm
+    {
+      let rmError = false;
+      fs.writeFileSync(path.join('tests', 'assets', 'c.txt'), 'coucou');
+
+      try {
+        await filesystem.rm('c.txt');
+      } catch (err) {
+        console.log(err.message);
+        rmError = true;
+      }
+
+      const cExists = fs.existsSync(path.join('tests', 'assets', 'c.txt'));
+      assert.equal(cExists, true);
+
+      if (!rmError) {
+        assert.fail('writeFile should have fail');
+      }
+    }
+
+    // write file (Blob)
+    {
+      let writeFileErrored = false;
+
+      try {
+        await filesystem.writeFile('my-file.txt', new Blob(['my-file']));
+      } catch (err) {
+        console.log(err.message);
+        writeFileErrored = true;
+      }
+
+      const fileExists = fs.existsSync(path.join('tests', 'assets', 'my-file.txt'));
+      assert.equal(fileExists, false);
+
+      if (!writeFileErrored) {
+        assert.fail('writeFile should have fail');
+      }
+    }
   });
 });

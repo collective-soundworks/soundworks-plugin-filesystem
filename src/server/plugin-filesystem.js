@@ -62,12 +62,16 @@ const pluginFactory = function(Plugin) {
 
       this._treeState = await this.server.stateManager.create(`sw:plugin:${this.id}`);
 
-      // writeFile route for Blob and File
-      // if config.env.protectedRoute disable all sensitive routes for clients
-      // open post only that are not connected
-
       this.server.router.post(`/sw/plugin/${this.id}/upload`, async (req, res) => {
         const clientId = parseInt(req.body.clientId);
+        const clientIp = req.ip;
+        const token = req.body.token;
+
+        if (!this.server.isTrustedToken(clientId, clientIp, token)) {
+          res.status(403).end(); // HTTP forbidden
+          return;
+        }
+
         const reqId = parseInt(req.body.reqId);
         const [filename, file] = Object.entries(req.files)[0];
         // find the client who triggered the post
@@ -105,6 +109,11 @@ const pluginFactory = function(Plugin) {
 
       // writeFile, mkdir, rename and delete from clients
       client.socket.addListener(`sw:plugin:${this.id}:req`, async (reqId, data) => {
+        if (!this.server.isTrustedClient(client)) {
+          client.socket.send(`sw:plugin:${this.id}:err`, reqId, '[soundworks:PluginFilesystem] Action is not permitted');
+          return;
+        }
+
         const { action, payload } = data;
 
         switch (action) {
@@ -152,13 +161,6 @@ const pluginFactory = function(Plugin) {
             }
             break;
           }
-          case 'delete':
-            if (data.payload.directory === null) {
-              this._delete(data.payload.filename);
-            } else {
-              this._delete(data.payload.directory, data.payload.filename);
-            }
-            break;
         }
       });
     }
@@ -206,11 +208,11 @@ const pluginFactory = function(Plugin) {
       // remove the middleware from express stack if it has already been registered
       // @note - might be a bit touchy as we manipulate the express stack directly
       if (this._middleware !== null) {
-        const index = this.server.router.stack.findIndex(layer => {
+        const index = this.server.router._router.stack.findIndex(layer => {
           return layer.handle === this._middleware;
         });
 
-        this.server.router.stack.splice(index, 1);
+        this.server.router._router.stack.splice(index, 1);
         this._middleware = null;
       }
 
@@ -238,7 +240,7 @@ const pluginFactory = function(Plugin) {
         }
 
         // throw if a route already exists
-        this.server.router.stack.forEach(layer => {
+        this.server.router._router.stack.forEach(layer => {
           if (layer.regexp.test(publicPath)) {
             throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", "${publicPath}" route is already registered in "server.router"`);
           }

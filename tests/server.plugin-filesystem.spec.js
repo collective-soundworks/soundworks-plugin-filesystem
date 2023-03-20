@@ -911,6 +911,12 @@ describe(`[server] PluginFilesystem`, () => {
         assert.equal(res, false);
       }
 
+      {
+        let filename = '/etc/group';
+        let res = filesystem._checkInDir(filename);
+        assert.equal(res, false);
+      }
+
       await server.stop();
     });
   });

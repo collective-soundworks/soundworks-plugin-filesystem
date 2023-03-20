@@ -130,6 +130,7 @@ export default (fetch, FormData) => {
           } else if (data instanceof Blob) {
             const form = new FormData();
             form.append('clientId', this.client.id);
+            form.append('token', this.client.token);
             form.append('reqId', reqId);
             form.append(filename, data);
 
@@ -142,10 +143,17 @@ export default (fetch, FormData) => {
             }
 
             try {
-              await fetch(url, {
+              const res = await fetch(url, {
                 method: 'POST',
                 body: form
               });
+
+              if (res.status === 403) {
+                const { reject } = this._commandPromises.get(reqId);
+                this._commandPromises.delete(reqId);
+
+                reject(new Error(`[soundworks:PluginFilesystem] Action is not permitted`));
+              }
             } catch (err) {
               console.log(err.message);
             }

@@ -1,0 +1,15 @@
+{
+  name: 'integration',
+  author: '',
+  clients: {
+    thing: {
+      target: 'node',
+    },
+    authorized: {
+      target: 'browser',
+    },
+    'not-authorized': {
+      target: 'browser',
+    },
+  },
+}
