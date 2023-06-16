@@ -216,6 +216,9 @@ const pluginFactory = function(Plugin) {
         this._middleware = null;
       }
 
+      // discard tree
+      this._treeState.set({ tree: null })
+
       // nothing left to do, this filesystem is in idle state
       if (dirname === null) {
         return Promise.resolve();
@@ -291,6 +294,9 @@ const pluginFactory = function(Plugin) {
       return this._treeState.get('tree');
     }
 
+    /**
+     * path must be relative according to the tree
+     */
     findInTree(path, tree = null) {
       if (tree === null) {
         tree = this.getTree();
@@ -320,6 +326,11 @@ const pluginFactory = function(Plugin) {
 
     async writeFile(filename, data) {
       const dirname = this.options.dirname;
+
+      if (this.options.dirname === null) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot write file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+      }
+
       filename = path.join(dirname, filename);
 
       if (!this._checkInDir(filename)) {
@@ -331,6 +342,11 @@ const pluginFactory = function(Plugin) {
 
     async mkdir(filename) {
       const dirname = this.options.dirname;
+
+      if (this.options.dirname === null) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot create dir while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+      }
+
       filename = path.join(dirname, filename);
 
       if (!this._checkInDir(filename)) {
@@ -342,6 +358,11 @@ const pluginFactory = function(Plugin) {
 
     async rename(oldPath, newPath) {
       const dirname = this.options.dirname;
+
+      if (this.options.dirname === null) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot rename while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+      }
+
       oldPath = path.join(dirname, oldPath);
 
       if (!this._checkInDir(oldPath)) {
@@ -359,6 +380,11 @@ const pluginFactory = function(Plugin) {
 
     async rm(filename) {
       const dirname = this.options.dirname;
+
+      if (this.options.dirname === null) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot remove file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+      }
+
       filename = path.join(dirname, filename);
 
       if (!this._checkInDir(filename)) {
@@ -449,37 +475,41 @@ const pluginFactory = function(Plugin) {
       return tree;
     }
 
-    _queueEvent(event, path) {
-      this._eventQueue.push([event, path]);
-
+    _queueEvent(event, pathname) {
       clearTimeout(this._batchTimeout);
+      // if for some reason chokidar propagates an absolute pathname (probably because
+      // it was initialized with an absolute path) just make it relative so we are
+      // consistent with the format returned by `dirTree` which is always relative
+      pathname = path.relative(process.cwd(), pathname);
+      // enqueue event
+      this._eventQueue.push([event, pathname]);
 
       this._batchTimeout = setTimeout(() => {
         const oldTree = this.getTree();
         const newTree = this._parseTree();
 
-        const events = this._eventQueue.map(([event, path]) => {
+        const events = this._eventQueue.map(([event, pathname]) => {
           switch (event) {
             case 'add':
             case 'addDir': {
-              const node = this.findInTree(path, newTree);
+              const node = this.findInTree(pathname, newTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created
                 //  at once and depth options is not supposed to track the inner files
-                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${pathname}, might be a false positive, ignore...`);
                 return null;
               }
 
               return { type: 'create', node };
             }
             case 'change': {
-              const node = this.findInTree(path, newTree);
+              const node = this.findInTree(pathname, newTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created
                 //  at once and depth options is not supposed to track the inner files
-                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${pathname}, might be a false positive, ignore...`);
                 return null;
               }
 
@@ -487,19 +517,19 @@ const pluginFactory = function(Plugin) {
             }
             case 'unlink':
             case 'unlinkDir': {
-              const node = this.findInTree(path, oldTree);
+              const node = this.findInTree(pathname, oldTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created
                 //  at once and depth options is not supposed to track the inner files
-                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${path}, might be a false positive, ignore...`);
+                console.warn(`[soundworks:PluginFilesytem] ${this.id} - node not found for chokidar event: ${event} ${pathname}, might be a false positive, ignore...`);
                 return null;
               }
 
               return { type: 'delete', node };
             }
             default: {
-              console.warn(`[soundworks:PluginFilesytem] ${this.id} - unparsed chokidar event: ${event} ${path}, ignore...`);
+              console.warn(`[soundworks:PluginFilesytem] ${this.id} - unparsed chokidar event: ${event} ${pathname}, ignore...`);
               return null;
             }
           }

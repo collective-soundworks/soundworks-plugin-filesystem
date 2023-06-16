@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 
 import { assert } from 'chai';
 import express from 'express';
@@ -918,6 +917,82 @@ describe(`[server] PluginFilesystem`, () => {
       }
 
       await server.stop();
+    });
+  });
+
+  describe('# plugin in idle state (dirname is null)', () => {
+    let server;
+    let filesystem;
+
+    before(async () => {
+      server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+      await server.start();
+
+      filesystem = await server.pluginManager.get('filesystem');
+      await filesystem.switch({ dirname: null });
+    });
+
+    after(async () => {
+      await server.stop();
+    });
+
+    it('getTree should return null', () => {
+      assert.equal(filesystem.getTree(), null);
+    });
+
+    it('writeFile should throw', async () => {
+      let errored = false;
+      try {
+        await filesystem.writeFile('coucou', 'coucou');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
+    it('mkdir should throw', async () => {
+      let errored = false;
+      try {
+        await filesystem.mkdir('coucou', 'coucou');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
+    it('rename should throw', async () => {
+      let errored = false;
+      try {
+        await filesystem.rename('coucou', 'coucou');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
+    it('rm should throw', async () => {
+      let errored = false;
+      try {
+        await filesystem.rm('coucou', 'coucou');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
     });
   });
 });
