@@ -146,10 +146,10 @@ and the list of `events` describing the modifications made on the tree.
 <a name="PluginFilesystemClient+getTreeAsUrlMap"></a>
 
 #### pluginFilesystemClient.getTreeAsUrlMap(filterExt, [keepExtension]) ⇒ <code>Object</code>
-Return the tree as flat map of <filename, url>
+Return the tree as flat map of `<filename, url>`
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: <code>Object</code> - - key/value pairs of { filename[.ext] : url }  
+**Returns**: <code>Object</code> - Map of `<filename, url>`  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
