@@ -51,6 +51,7 @@ export default (fetch, FormData) => {
 
       /**
        * Return the current filesystem tree.
+       * @return {Object}
        */
       getTree() {
         return this._treeState.get('tree');
@@ -110,7 +111,8 @@ export default (fetch, FormData) => {
 
       /**
        * Return a node from the tree matching the given path.
-       * @param {String} path - path of the node to be retrieved
+       * @param {String} path - Path of the node to be retrieved.
+       * @return {Object}
        */
       findInTree(pathOrUrl, tree = null) {
         if (tree === null) {
@@ -144,7 +146,7 @@ export default (fetch, FormData) => {
        *
        * @param {String} filename - Name of the file.
        * @param {String|Blob} data - Content of the file.
-       * @return Promise
+       * @return {Promise}
        */
       async writeFile(filename, data) {
         return new Promise(async (resolve, reject) => {
@@ -197,7 +199,7 @@ export default (fetch, FormData) => {
        * Create a directory
        *
        * @param {String} pathname - Path of the directory.
-       * @return Promise
+       * @return {Promise}
        */
       mkdir(filename) {
         return new Promise(async (resolve, reject) => {
@@ -216,7 +218,7 @@ export default (fetch, FormData) => {
        *
        * @param {String} oldPath - Current pathname.
        * @param {String} newPath - New pathname.
-       * @return Promise
+       * @return {Promise}
        */
       rename(oldPath, newPath) {
         return new Promise(async (resolve, reject) => {
@@ -235,7 +237,7 @@ export default (fetch, FormData) => {
        *
        * @param {String} oldPath - Current pathname.
        * @param {String} newPath - New pathname.
-       * @return Promise
+       * @return {Promise}
        */
       rm(filename) {
         return new Promise(async (resolve, reject) => {

@@ -113,18 +113,18 @@ Client-side representation of the soundworks' filesystem plugin.
 **Kind**: global class  
 
 * [PluginFilesystemClient](#PluginFilesystemClient)
-    * [.getTree()](#PluginFilesystemClient+getTree)
+    * [.getTree()](#PluginFilesystemClient+getTree) ⇒ <code>Object</code>
     * [.onUpdate(callback, [executeListener])](#PluginFilesystemClient+onUpdate) ⇒ <code>function</code>
     * [.getTreeAsUrlMap(filterExt, [keepExtension])](#PluginFilesystemClient+getTreeAsUrlMap) ⇒ <code>Object</code>
-    * [.findInTree(path)](#PluginFilesystemClient+findInTree)
-    * [.writeFile(filename, data)](#PluginFilesystemClient+writeFile) ⇒
-    * [.mkdir(pathname)](#PluginFilesystemClient+mkdir) ⇒
-    * [.rename(oldPath, newPath)](#PluginFilesystemClient+rename) ⇒
-    * [.rm(oldPath, newPath)](#PluginFilesystemClient+rm) ⇒
+    * [.findInTree(path)](#PluginFilesystemClient+findInTree) ⇒ <code>Object</code>
+    * [.writeFile(filename, data)](#PluginFilesystemClient+writeFile) ⇒ <code>Promise</code>
+    * [.mkdir(pathname)](#PluginFilesystemClient+mkdir) ⇒ <code>Promise</code>
+    * [.rename(oldPath, newPath)](#PluginFilesystemClient+rename) ⇒ <code>Promise</code>
+    * [.rm(oldPath, newPath)](#PluginFilesystemClient+rm) ⇒ <code>Promise</code>
 
 <a name="PluginFilesystemClient+getTree"></a>
 
-#### pluginFilesystemClient.getTree()
+#### pluginFilesystemClient.getTree() ⇒ <code>Object</code>
 Return the current filesystem tree.
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
@@ -158,22 +158,21 @@ Return the tree as flat map of <filename, url>
 
 <a name="PluginFilesystemClient+findInTree"></a>
 
-#### pluginFilesystemClient.findInTree(path)
+#### pluginFilesystemClient.findInTree(path) ⇒ <code>Object</code>
 Return a node from the tree matching the given path.
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| path | <code>String</code> | path of the node to be retrieved |
+| path | <code>String</code> | Path of the node to be retrieved. |
 
 <a name="PluginFilesystemClient+writeFile"></a>
 
-#### pluginFilesystemClient.writeFile(filename, data) ⇒
+#### pluginFilesystemClient.writeFile(filename, data) ⇒ <code>Promise</code>
 Write a file
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -182,11 +181,10 @@ Write a file
 
 <a name="PluginFilesystemClient+mkdir"></a>
 
-#### pluginFilesystemClient.mkdir(pathname) ⇒
+#### pluginFilesystemClient.mkdir(pathname) ⇒ <code>Promise</code>
 Create a directory
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -194,11 +192,10 @@ Create a directory
 
 <a name="PluginFilesystemClient+rename"></a>
 
-#### pluginFilesystemClient.rename(oldPath, newPath) ⇒
+#### pluginFilesystemClient.rename(oldPath, newPath) ⇒ <code>Promise</code>
 Rename a file or directory
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -207,11 +204,10 @@ Rename a file or directory
 
 <a name="PluginFilesystemClient+rm"></a>
 
-#### pluginFilesystemClient.rm(oldPath, newPath) ⇒
+#### pluginFilesystemClient.rm(oldPath, newPath) ⇒ <code>Promise</code>
 Delete a file or directory
 
 **Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -228,13 +224,13 @@ Server-side representation of the soundworks' filesystem plugin.
 * [PluginFilesystemServer](#PluginFilesystemServer)
     * [new PluginFilesystemServer()](#new_PluginFilesystemServer_new)
     * [.switch(options)](#PluginFilesystemServer+switch)
-    * [.getTree()](#PluginFilesystemServer+getTree)
+    * [.getTree()](#PluginFilesystemServer+getTree) ⇒ <code>Object</code>
     * [.onUpdate(callback, [executeListener])](#PluginFilesystemServer+onUpdate) ⇒ <code>function</code>
-    * [.findInTree(path)](#PluginFilesystemServer+findInTree)
-    * [.writeFile(filename, data)](#PluginFilesystemServer+writeFile) ⇒
-    * [.mkdir(pathname)](#PluginFilesystemServer+mkdir) ⇒
-    * [.rename(oldPath, newPath)](#PluginFilesystemServer+rename) ⇒
-    * [.rm(oldPath, newPath)](#PluginFilesystemServer+rm) ⇒
+    * [.findInTree(path)](#PluginFilesystemServer+findInTree) ⇒ <code>Object</code>
+    * [.writeFile(filename, data)](#PluginFilesystemServer+writeFile) ⇒ <code>Promise</code>
+    * [.mkdir(pathname)](#PluginFilesystemServer+mkdir) ⇒ <code>Promise</code>
+    * [.rename(oldPath, newPath)](#PluginFilesystemServer+rename) ⇒ <code>Promise</code>
+    * [.rm(oldPath, newPath)](#PluginFilesystemServer+rm) ⇒ <code>Promise</code>
 
 <a name="new_PluginFilesystemServer_new"></a>
 
@@ -275,8 +271,8 @@ keeping the same plugin and related logic at hand.
 
 <a name="PluginFilesystemServer+getTree"></a>
 
-#### pluginFilesystemServer.getTree()
-Return the current filesystem tree
+#### pluginFilesystemServer.getTree() ⇒ <code>Object</code>
+Return the current filesystem tree.
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
 <a name="PluginFilesystemServer+onUpdate"></a>
@@ -296,7 +292,7 @@ and the list of `events` describing the modifications made on the tree.
 
 <a name="PluginFilesystemServer+findInTree"></a>
 
-#### pluginFilesystemServer.findInTree(path)
+#### pluginFilesystemServer.findInTree(path) ⇒ <code>Object</code>
 Return a node from the tree matching the given path.
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
@@ -307,11 +303,10 @@ Return a node from the tree matching the given path.
 
 <a name="PluginFilesystemServer+writeFile"></a>
 
-#### pluginFilesystemServer.writeFile(filename, data) ⇒
+#### pluginFilesystemServer.writeFile(filename, data) ⇒ <code>Promise</code>
 Write a file
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -320,11 +315,10 @@ Write a file
 
 <a name="PluginFilesystemServer+mkdir"></a>
 
-#### pluginFilesystemServer.mkdir(pathname) ⇒
+#### pluginFilesystemServer.mkdir(pathname) ⇒ <code>Promise</code>
 Create a directory
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -332,11 +326,10 @@ Create a directory
 
 <a name="PluginFilesystemServer+rename"></a>
 
-#### pluginFilesystemServer.rename(oldPath, newPath) ⇒
+#### pluginFilesystemServer.rename(oldPath, newPath) ⇒ <code>Promise</code>
 Rename a file or directory
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -345,11 +338,10 @@ Rename a file or directory
 
 <a name="PluginFilesystemServer+rm"></a>
 
-#### pluginFilesystemServer.rm(oldPath, newPath) ⇒
+#### pluginFilesystemServer.rm(oldPath, newPath) ⇒ <code>Promise</code>
 Delete a file or directory
 
 **Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
-**Returns**: Promise  
 
 | Param | Type | Description |
 | --- | --- | --- |

@@ -314,7 +314,8 @@ const pluginFactory = function(Plugin) {
     }
 
     /**
-     * Return the current filesystem tree
+     * Return the current filesystem tree.
+     * @return {Object}
      */
     getTree() {
       return this._treeState.get('tree');
@@ -337,6 +338,7 @@ const pluginFactory = function(Plugin) {
     /**
      * Return a node from the tree matching the given path.
      * @param {String} path - path of the node to be retrieved
+     * @return {Object}
      */
     findInTree(path, tree = null) {
       if (tree === null) {
@@ -370,7 +372,7 @@ const pluginFactory = function(Plugin) {
      *
      * @param {String} filename - Name of the file.
      * @param {String|Blob} data - Content of the file.
-     * @return Promise
+     * @return {Promise}
      */
     async writeFile(filename, data) {
       const dirname = this.options.dirname;
@@ -392,7 +394,7 @@ const pluginFactory = function(Plugin) {
      * Create a directory
      *
      * @param {String} pathname - Path of the directory.
-     * @return Promise
+     * @return {Promise}
      */
     async mkdir(pathname) {
       const dirname = this.options.dirname;
@@ -415,7 +417,7 @@ const pluginFactory = function(Plugin) {
      *
      * @param {String} oldPath - Current pathname.
      * @param {String} newPath - New pathname.
-     * @return Promise
+     * @return {Promise}
      */
     async rename(oldPath, newPath) {
       const dirname = this.options.dirname;
@@ -444,7 +446,7 @@ const pluginFactory = function(Plugin) {
      *
      * @param {String} oldPath - Current pathname.
      * @param {String} newPath - New pathname.
-     * @return Promise
+     * @return {Promise}
      */
     async rm(pathname) {
       const dirname = this.options.dirname;
