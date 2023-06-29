@@ -4,7 +4,7 @@ import launcher from '@soundworks/helpers/launcher.js';
 
 import createLayout from './views/layout.js';
 
-import pluginFilesystem from '../../../../../src/client/plugin-filesystem-module.js';
+import pluginFilesystem from '../../../../../src/PluginFilesystemClient.browser.js';
 
 // - General documentation: https://soundworks.dev/
 // - API documentation:     https://soundworks.dev/api

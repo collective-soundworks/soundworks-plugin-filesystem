@@ -3,7 +3,7 @@ import { Client } from '@soundworks/core/client.js';
 import launcher from '@soundworks/helpers/launcher.js';
 import { html, nothing } from 'lit';
 
-import pluginFilesystem from '../../../../../src/client/plugin-filesystem-module.js';
+import pluginFilesystem from '../../../../../src/PluginFilesystemServer.browser.js';
 import createLayout from './views/layout.js';
 
 import '@ircam/simple-components/sc-button.js';

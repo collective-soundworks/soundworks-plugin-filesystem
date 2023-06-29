@@ -1,4 +1,4 @@
-import factory from './plugin-filesystem.js';
+import factory from './PluginFilesystemClient.js';
 
 const pluginFactory = factory(globalThis.fetch, globalThis.FormData);
 

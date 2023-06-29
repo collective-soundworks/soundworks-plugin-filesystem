@@ -12,8 +12,8 @@ import fetch from 'node-fetch';
 import { Server } from '@soundworks/core/server.js';
 import { Client } from '@soundworks/core/client.js';
 
-import serverFilesystemPlugin from '../src/server/plugin-filesystem.js';
-import clientFilesystemPlugin from '../src/client/plugin-filesystem-node.js';
+import serverFilesystemPlugin from '../src/PluginFilesystemServer.js';
+import clientFilesystemPlugin from '../src/PluginFilesystemClient.node.js';
 
 const config = {
   app: {

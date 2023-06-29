@@ -5,7 +5,7 @@ import launcher from '@soundworks/helpers/launcher.js';
 import { loadConfig } from '../../utils/load-config.js';
 import createLayout from './views/layout.js';
 
-import pluginFilesystem from '../../../../../src/client/plugin-filesystem-node.js';
+import pluginFilesystem from '../../../../../src/PluginFilesystemClient.node.js';
 
 // - General documentation: https://soundworks.dev/
 // - API documentation:     https://soundworks.dev/api

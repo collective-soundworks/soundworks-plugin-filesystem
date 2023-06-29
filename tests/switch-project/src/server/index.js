@@ -4,7 +4,7 @@ import { Server } from '@soundworks/core/server.js';
 import { loadConfig } from '../utils/load-config.js';
 import '../utils/catch-unhandled-errors.js';
 
-import pluginFilesystem from '../../../../src/server/plugin-filesystem.js';
+import pluginFilesystem from '../../../../src/PluginFilesystemServer.js';
 
 // - General documentation: https://soundworks.dev/
 // - API documentation:     https://soundworks.dev/api

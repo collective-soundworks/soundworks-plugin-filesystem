@@ -4,7 +4,7 @@
 // simply launch using node: `node tests/simple-watcher.js`
 
 import { Server } from '@soundworks/core/server.js';
-import filesystemPlugin from '../src/server/plugin-filesystem.js';
+import filesystemPlugin from '../src/PluginFilesystemServer.js';
 
 function logTree(tree, depth) {
   let prefix = new Array(2 * depth).join(' ');

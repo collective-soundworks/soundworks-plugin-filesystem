@@ -1,8 +1,8 @@
-# `@soundworks/plugin-filesystem`
+# soundworks | plugin filesystem
 
-> [`soundworks`](https://github.com/collective-soundworks/soundworks) plugin
-> to parse and watch directories and distribute their contents to all clients
-> in real-time.
+[![npm version](https://badge.fury.io/js/@soundworks%2Fplugin-filesystem.svg)](https://badge.fury.io/js/@soundworks%2Fplugin-filesystem)
+
+[`soundworks`](https://soundworks.dev) plugin to watch directories and update their contents from any node.
 
 ## Table of Contents
 
@@ -33,15 +33,9 @@
 npm install @soundworks/plugin-filesystem --save
 ```
 
-## Example
-
-A working example can be found in the [https://github.com/collective-soundworks/soundworks-examples](https://github.com/collective-soundworks/soundworks-examples) repository.
-
 ## Usage
 
-### Server installation
-
-#### Registering the plugin
+### Server
 
 ```js
 // index.js
@@ -50,36 +44,22 @@ import pluginFilesystemFactory from '@soundworks/plugin-filesystem/server';
 
 const server = new Server();
 server.pluginManager.register('filesystem', pluginFilesystemFactory, {
-  directories: [{
-    // key at which the file tree will be accessible
-    name: 'my-name',
-    // path to the watched directory, can be relative to process.cwd()
-    // or absolute, in all cases file paths in the tree will be normalized
-    // to be relative to `process.cwd()`
-    path: 'path/to/directory',
-    // if defined, add an `url` to each tree node, that defines the
-    // route at which the files will be publicly accessible.
-    publicDirectory: '',
-  }],
-}, []);
+  // path to the watched directory, can be relative to process.cwd()
+  // or absolute, in all cases file paths in the tree will be normalized
+  // to be relative to `process.cwd()`
+  dirname: 'path/to/directory',
+  // if defined, add an `url` to each tree node, that defines the
+  // route at which the files are publicly accessible.
+  publicPath: '',
+});
+
+await server.start();
+
+const filesystem = await servre.pluginManager.get('filesystem');
+await filesystem.writeFile('my-file.txt', 'Hello Server');
 ```
 
-#### Requiring the plugin
-
-```js
-// MyExperience.js
-import { AbstractExperience } from '@soundworks/core/server';
-
-class MyExperience extends AbstractExperience {
-  constructor(server, clientType) {
-    super(server, clientType);
-    // require plugin in the experience
-    this.filesystem = this.require('filesystem');
-  }
-}
-```
-
-### Client installation
+### Client
 
 #### Registering the plugin
 
@@ -90,103 +70,37 @@ import pluginFilesystemFactory from '@soundworks/plugin-filesystem/client';
 
 const client = new Client();
 client.pluginManager.register('filesystem', pluginFilesystemFactory, {}, []);
+
+await client.start();
+
+const filesystem = await client.pluginManager.get('filesystem');
+await filesystem.writeFile('my-file.txt', 'Hello Client');
 ```
 
-#### Requiring the plugin
+## Notes
 
-```js
-// MyExperience.js
-import { Experience } from '@soundworks/core/client';
+### Reading files
 
-class MyExperience extends Experience {
-  constructor(client) {
-    super(client);
-    // require plugin in the experience
-    this.filesystem = this.require('filesystem');
-  }
-}
-```
+For now, the filesystem plugin does not provide any way to read files due to the impossibility to have consistent file representation between node and the browser, and to the large type of files that would require different handling or processing (e.g. image, sound, text).
 
-### Getting current values and subscribing to changes
+According to your specific needs you can rely on other plugins (e.g. audio-buffer-loader) or on the state manager (e.g. for text files) to read and share the files.
 
-The following API is the same on the client as well as the server side:
+### Security
 
-```js
-// get the current values of all registered directories
-const trees = this.filesystem.getValues();
+Being able to write and delete files from any connected client poses evident security questions, moreover if your application aims at running online. To prevent such issues, all sensible operations (i.e. other than listing the files) of the  plugin are blocked if the `env.type` config option passed to the soundworks server is set to `production`. 
 
-for (let name in trees) {
-  const tree = trees[name];
-  console.log(name, tree);
-}
+In such case, only trusted clients that authentified by a login and password will be able to perform these operations.
 
-// or get a single tree
-const tree = this.filesystem.get(name);
+See the `config/env-**.js` files to configure your application (@todo - tutorial).
 
-// be notified when a change occurs in a watched filesystem
-this.filesystem.subscribe(updates => {
-  for (let name in updates) {
-    const tree = updates[name];
-    console.log(name, tree);
-  }
-});
-```
+## API
 
-### Uploading and deleting file from a client
-
-The plugin allows you to upload and delete files directly from a client 
-
-```js
-const files = {
-  'a.txt': fileA,
-  'b.json': fileB,
-}
-
-// This uploads the files to the first registered directory
-this.filesystem.upload(files); 
-// This uploads the files to the directory registered with the name `dir`
-this.filesystem.upload(dir, files); 
-
-// Similarly to delete a file 
-this.filesystem.delete(filename);
-this.filesystem.delete(dir, filename);
-```
-
-
-### File tree format
-
-The plugin is built on top of the [node-directory-tree](https://github.com/mihneadb/node-directory-tree) library and therefore follows the format described [here](https://github.com/mihneadb/node-directory-tree#result). The only addition to the format is the addition of a `url` field on each node to simplify the access of the resources for the clients.
-
-### Routing and `publicDirectory` option
-
-The `publicDirectory` option allows to create an valid `url` from the filesystem paths. It can be use in conjunction with `server.router.use` to open specific routes for static assets.
-
-For example, let's consider a case where you watch the directory `/misc/audio` but want to publicly access the audio files through `http://my.domain/audio/*.wav`. You can do the following:
-
-```js
-// server/index.js
-server.router.use('audio', serveStatic('misc/audio'));
-
-server.pluginManager.register('filesystem', pluginFilesystemFactory, {
-  // default to `.data/scripts`
-  directories: [{
-      name: 'audio-files',
-      path: 'misc/audio',
-      publicDirectory: 'audio',
-  }]
-}, []);
-```
-
-Note that if `publicDirectory` is not defined in the configuration object, the `url` field won't be added to the nodes of the tree.
-
-### Watching a directory outside the project
-
-The plugin and `url` strategy described above should even work with directories located at arbitrary locations in your file system.
+<!-- api -->
 
 ## Credits
 
-The code has been initiated in the framework of the WAVE and CoSiMa research projects, funded by the French National Research Agency (ANR).
+[https://soundworks.dev/credits.html](https://soundworks.dev/credits.html)
 
 ## License
 
-BSD-3-Clause
+[BSD-3-Clause](./LICENSE)

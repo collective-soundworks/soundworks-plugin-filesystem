@@ -7,7 +7,7 @@ import express from 'express';
 import fetch from 'node-fetch';
 
 import { Server } from '@soundworks/core/server.js';
-import serverFilesystemPlugin from '../src/server/plugin-filesystem.js';
+import serverFilesystemPlugin from '../src/PluginFilesystemServer.js';
 
 const config = {
   app: {
