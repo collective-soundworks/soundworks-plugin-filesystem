@@ -63,10 +63,10 @@ await filesystem.writeFile('my-file.txt', 'Hello Server');
 ```js
 // index.js
 import { Client } from '@soundworks/core/client';
-import pluginFilesystemFactory from '@soundworks/plugin-filesystem/client';
+import pluginFilesystem from '@soundworks/plugin-filesystem/client';
 
 const client = new Client();
-client.pluginManager.register('filesystem', pluginFilesystemFactory, {}, []);
+client.pluginManager.register('filesystem', pluginFilesystem, {});
 
 await client.start();
 

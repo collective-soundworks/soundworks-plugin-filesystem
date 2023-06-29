@@ -72,12 +72,12 @@ export default (fetch, FormData) => {
       }
 
       /**
-       * Return the tree as flat map of <filename, url>
+       * Return the tree as flat map of `<filename, url>`
        *
        * @param {String} filterExt - File extension to retrieve in the list
        * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
        *  from the keys
-       * @return {Object} - key/value pairs of { filename[.ext] : url }
+       * @return {Object} Map of `<filename, url>`
        */
       getTreeAsUrlMap(filterExt, keepExtension = false) {
         let map = {};

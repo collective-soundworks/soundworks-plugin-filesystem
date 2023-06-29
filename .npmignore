@@ -2,3 +2,7 @@ tests
 .editorconfig
 sw-filesystem.js
 TODO.md
+
+# junk files
+.DS_Store
+Thumbs.db
