@@ -9,19 +9,16 @@
 <!-- toc -->
 
 - [Installation](#installation)
-- [Example](#example)
 - [Usage](#usage)
-  * [Server installation](#server-installation)
-    + [Registering the plugin](#registering-the-plugin)
-    + [Requiring the plugin](#requiring-the-plugin)
-  * [Client installation](#client-installation)
-    + [Registering the plugin](#registering-the-plugin-1)
-    + [Requiring the plugin](#requiring-the-plugin-1)
-  * [Getting current values and subscribing to changes](#getting-current-values-and-subscribing-to-changes)
-  * [Uploading and deleting file from a client](#uploading-and-deleting-file-from-a-client)
-  * [File tree format](#file-tree-format)
-  * [Routing and `publicDirectory` option](#routing-and-publicdirectory-option)
-  * [Watching a directory outside the project](#watching-a-directory-outside-the-project)
+  * [Server](#server)
+  * [Client](#client)
+- [Notes](#notes)
+  * [Reading files](#reading-files)
+  * [Security](#security)
+- [API](#api)
+  * [Classes](#classes)
+  * [PluginFilesystemClient](#pluginfilesystemclient)
+  * [PluginFilesystemServer](#pluginfilesystemserver)
 - [Credits](#credits)
 - [License](#license)
 
@@ -96,6 +93,271 @@ See the `config/env-**.js` files to configure your application (@todo - tutorial
 ## API
 
 <!-- api -->
+
+### Classes
+
+<dl>
+<dt><a href="#PluginFilesystemClient">PluginFilesystemClient</a></dt>
+<dd><p>Client-side representation of the soundworks&#39; filesystem plugin.</p>
+</dd>
+<dt><a href="#PluginFilesystemServer">PluginFilesystemServer</a></dt>
+<dd><p>Server-side representation of the soundworks&#39; filesystem plugin.</p>
+</dd>
+</dl>
+
+<a name="PluginFilesystemClient"></a>
+
+### PluginFilesystemClient
+Client-side representation of the soundworks' filesystem plugin.
+
+**Kind**: global class  
+
+* [PluginFilesystemClient](#PluginFilesystemClient)
+    * [.getTree()](#PluginFilesystemClient+getTree)
+    * [.onUpdate(callback, [executeListener])](#PluginFilesystemClient+onUpdate) ⇒ <code>function</code>
+    * [.getTreeAsUrlMap(filterExt, [keepExtension])](#PluginFilesystemClient+getTreeAsUrlMap) ⇒ <code>Object</code>
+    * [.findInTree(path)](#PluginFilesystemClient+findInTree)
+    * [.writeFile(filename, data)](#PluginFilesystemClient+writeFile) ⇒
+    * [.mkdir(pathname)](#PluginFilesystemClient+mkdir) ⇒
+    * [.rename(oldPath, newPath)](#PluginFilesystemClient+rename) ⇒
+    * [.rm(oldPath, newPath)](#PluginFilesystemClient+rm) ⇒
+
+<a name="PluginFilesystemClient+getTree"></a>
+
+#### pluginFilesystemClient.getTree()
+Return the current filesystem tree.
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+<a name="PluginFilesystemClient+onUpdate"></a>
+
+#### pluginFilesystemClient.onUpdate(callback, [executeListener]) ⇒ <code>function</code>
+Register a callback to execute when a file is created, modified or deleted
+on the underlying directory. The callback will receive the updated `tree`
+and the list of `events` describing the modifications made on the tree.
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: <code>function</code> - Function that unregister the listener when executed.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| callback | <code>function</code> |  | Callback function to execute |
+| [executeListener] | <code>boolean</code> | <code>false</code> | If true, execute the given  callback immediately. |
+
+<a name="PluginFilesystemClient+getTreeAsUrlMap"></a>
+
+#### pluginFilesystemClient.getTreeAsUrlMap(filterExt, [keepExtension]) ⇒ <code>Object</code>
+Return the tree as flat map of <filename, url>
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: <code>Object</code> - - key/value pairs of { filename[.ext] : url }  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| filterExt | <code>String</code> |  | File extension to retrieve in the list |
+| [keepExtension] | <code>Boolean</code> | <code>false</code> | Keep or remove the file extension  from the keys |
+
+<a name="PluginFilesystemClient+findInTree"></a>
+
+#### pluginFilesystemClient.findInTree(path)
+Return a node from the tree matching the given path.
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| path | <code>String</code> | path of the node to be retrieved |
+
+<a name="PluginFilesystemClient+writeFile"></a>
+
+#### pluginFilesystemClient.writeFile(filename, data) ⇒
+Write a file
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| filename | <code>String</code> | Name of the file. |
+| data | <code>String</code> \| <code>Blob</code> | Content of the file. |
+
+<a name="PluginFilesystemClient+mkdir"></a>
+
+#### pluginFilesystemClient.mkdir(pathname) ⇒
+Create a directory
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pathname | <code>String</code> | Path of the directory. |
+
+<a name="PluginFilesystemClient+rename"></a>
+
+#### pluginFilesystemClient.rename(oldPath, newPath) ⇒
+Rename a file or directory
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| oldPath | <code>String</code> | Current pathname. |
+| newPath | <code>String</code> | New pathname. |
+
+<a name="PluginFilesystemClient+rm"></a>
+
+#### pluginFilesystemClient.rm(oldPath, newPath) ⇒
+Delete a file or directory
+
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| oldPath | <code>String</code> | Current pathname. |
+| newPath | <code>String</code> | New pathname. |
+
+<a name="PluginFilesystemServer"></a>
+
+### PluginFilesystemServer
+Server-side representation of the soundworks' filesystem plugin.
+
+**Kind**: global class  
+
+* [PluginFilesystemServer](#PluginFilesystemServer)
+    * [new PluginFilesystemServer()](#new_PluginFilesystemServer_new)
+    * [.switch(options)](#PluginFilesystemServer+switch)
+    * [.getTree()](#PluginFilesystemServer+getTree)
+    * [.onUpdate(callback, [executeListener])](#PluginFilesystemServer+onUpdate) ⇒ <code>function</code>
+    * [.findInTree(path)](#PluginFilesystemServer+findInTree)
+    * [.writeFile(filename, data)](#PluginFilesystemServer+writeFile) ⇒
+    * [.mkdir(pathname)](#PluginFilesystemServer+mkdir) ⇒
+    * [.rename(oldPath, newPath)](#PluginFilesystemServer+rename) ⇒
+    * [.rm(oldPath, newPath)](#PluginFilesystemServer+rm) ⇒
+
+<a name="new_PluginFilesystemServer_new"></a>
+
+#### new PluginFilesystemServer()
+The constructor should never be called manually. The plugin will be
+instantiated by soundworks when registered in the `pluginManager`
+
+Available options:
+- `dirname` {String} - directory to watch into
+- `publicPath` {String} - (optionnal) optionnal public path for the assets.
+ If set, a route will be added to the router to serve the assets and an
+ `url` entry will be added to each node of the tree.
+- `depth` {String} - (optionnal) Maximum depth to watch in the file structure.
+
+If no option is given, for example before a user selects a project, the plugin
+will stay idle until `switch` is called.
+
+**Example**  
+```js
+server.pluginManager.register('filesystem', filesystemPlugin, {
+  dirname: 'my-dir',
+  publicPath: 'assets'
+});
+```
+<a name="PluginFilesystemServer+switch"></a>
+
+#### pluginFilesystemServer.switch(options)
+Switch the filesystem to a new directory, e.g. to change project while
+keeping the same plugin and related logic at hand.
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| options | <code>Object</code> |  |  |
+| [options.dirname] | <code>String</code> | <code></code> | directory to watch, plugin is idle  if null |
+| [options.publicPath] | <code>String</code> | <code></code> | optionnal public path for the  assets. If set, a route will be added to the router to serve the assets and  an `url` entry will be added to each node of the tree. |
+
+<a name="PluginFilesystemServer+getTree"></a>
+
+#### pluginFilesystemServer.getTree()
+Return the current filesystem tree
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+<a name="PluginFilesystemServer+onUpdate"></a>
+
+#### pluginFilesystemServer.onUpdate(callback, [executeListener]) ⇒ <code>function</code>
+Register a callback to execute when a file is created, modified or deleted
+on the underlying directory. The callback will receive the updated `tree`
+and the list of `events` describing the modifications made on the tree.
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Returns**: <code>function</code> - Function that unregister the listener when executed.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| callback | <code>function</code> |  | Callback function to execute |
+| [executeListener] | <code>boolean</code> | <code>false</code> | If true, execute the given  callback immediately. |
+
+<a name="PluginFilesystemServer+findInTree"></a>
+
+#### pluginFilesystemServer.findInTree(path)
+Return a node from the tree matching the given path.
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| path | <code>String</code> | path of the node to be retrieved |
+
+<a name="PluginFilesystemServer+writeFile"></a>
+
+#### pluginFilesystemServer.writeFile(filename, data) ⇒
+Write a file
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| filename | <code>String</code> | Name of the file. |
+| data | <code>String</code> \| <code>Blob</code> | Content of the file. |
+
+<a name="PluginFilesystemServer+mkdir"></a>
+
+#### pluginFilesystemServer.mkdir(pathname) ⇒
+Create a directory
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pathname | <code>String</code> | Path of the directory. |
+
+<a name="PluginFilesystemServer+rename"></a>
+
+#### pluginFilesystemServer.rename(oldPath, newPath) ⇒
+Rename a file or directory
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| oldPath | <code>String</code> | Current pathname. |
+| newPath | <code>String</code> | New pathname. |
+
+<a name="PluginFilesystemServer+rm"></a>
+
+#### pluginFilesystemServer.rm(oldPath, newPath) ⇒
+Delete a file or directory
+
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Returns**: Promise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| oldPath | <code>String</code> | Current pathname. |
+| newPath | <code>String</code> | New pathname. |
+
+
+<!-- apistop -->
 
 ## Credits
 

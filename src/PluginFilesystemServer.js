@@ -15,7 +15,30 @@ const cwd = process.cwd();
 const EXCLUDE_DOT_FILES = /(^|[\/\\])\../;
 
 const pluginFactory = function(Plugin) {
-  return class PluginFilesystem extends Plugin {
+  /**
+   * Server-side representation of the soundworks' filesystem plugin.
+   */
+  class PluginFilesystemServer extends Plugin {
+    /**
+     * The constructor should never be called manually. The plugin will be
+     * instantiated by soundworks when registered in the `pluginManager`
+     *
+     * Available options:
+     * - `dirname` {String} - directory to watch into
+     * - `publicPath` {String} - (optionnal) optionnal public path for the assets.
+     *  If set, a route will be added to the router to serve the assets and an
+     *  `url` entry will be added to each node of the tree.
+     * - `depth` {String} - (optionnal) Maximum depth to watch in the file structure.
+     *
+     * If no option is given, for example before a user selects a project, the plugin
+     * will stay idle until `switch` is called.
+     *
+     * @example
+     * server.pluginManager.register('filesystem', filesystemPlugin, {
+     *   dirname: 'my-dir',
+     *   publicPath: 'assets'
+     * });
+     */
     constructor(server, id, options = {}) {
       super(server, id);
 
@@ -25,7 +48,7 @@ const pluginFactory = function(Plugin) {
         depth: undefined, // match chokidar default
       };
 
-      this.options = Object.assign({}, defaults, options);
+      this.options = Object.assign(defaults, options);
       // a state containing the file system infos
       this._treeState = null;
       // chokidar watchers
@@ -57,6 +80,7 @@ const pluginFactory = function(Plugin) {
       this._queueEvent = this._queueEvent.bind(this);
     }
 
+    /** @private */
     async start() {
       await super.start();
 
@@ -96,6 +120,7 @@ const pluginFactory = function(Plugin) {
       await this.switch(this.options);
     }
 
+    /** @private */
     async stop() {
       super.stop();
 
@@ -104,6 +129,7 @@ const pluginFactory = function(Plugin) {
       }
     }
 
+    /** @private */
     addClient(client) {
       super.addClient(client);
 
@@ -165,6 +191,7 @@ const pluginFactory = function(Plugin) {
       });
     }
 
+    /** @private */
     removeClient(client) {
       client.socket.removeAllListeners(`sw:plugin:${this.id}:req`);
 
@@ -286,16 +313,30 @@ const pluginFactory = function(Plugin) {
       });
     }
 
-    onUpdate(callback, executeListener = false) {
-      return this._treeState.onUpdate(callback, executeListener);
-    }
-
+    /**
+     * Return the current filesystem tree
+     */
     getTree() {
       return this._treeState.get('tree');
     }
 
     /**
-     * path must be relative according to the tree
+     * Register a callback to execute when a file is created, modified or deleted
+     * on the underlying directory. The callback will receive the updated `tree`
+     * and the list of `events` describing the modifications made on the tree.
+     *
+     * @param {Function} callback - Callback function to execute
+     * @param {boolean} [executeListener=false] - If true, execute the given
+     *  callback immediately.
+     * @return {Function} Function that unregister the listener when executed.
+     */
+    onUpdate(callback, executeListener = false) {
+      return this._treeState.onUpdate(callback, executeListener);
+    }
+
+    /**
+     * Return a node from the tree matching the given path.
+     * @param {String} path - path of the node to be retrieved
      */
     findInTree(path, tree = null) {
       if (tree === null) {
@@ -324,6 +365,13 @@ const pluginFactory = function(Plugin) {
       return leaf;
     }
 
+    /**
+     * Write a file
+     *
+     * @param {String} filename - Name of the file.
+     * @param {String|Blob} data - Content of the file.
+     * @return Promise
+     */
     async writeFile(filename, data) {
       const dirname = this.options.dirname;
 
@@ -340,22 +388,35 @@ const pluginFactory = function(Plugin) {
       await writeFile(filename, data);
     }
 
-    async mkdir(filename) {
+    /**
+     * Create a directory
+     *
+     * @param {String} pathname - Path of the directory.
+     * @return Promise
+     */
+    async mkdir(pathname) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot create dir while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
       }
 
-      filename = path.join(dirname, filename);
+      pathname = path.join(dirname, pathname);
 
-      if (!this._checkInDir(filename)) {
+      if (!this._checkInDir(pathname)) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot create dir outside directory "${dirname}"`);
       }
 
-      await mkdir(filename, { recursive: true });
+      await mkdir(pathname, { recursive: true });
     }
 
+    /**
+     * Rename a file or directory
+     *
+     * @param {String} oldPath - Current pathname.
+     * @param {String} newPath - New pathname.
+     * @return Promise
+     */
     async rename(oldPath, newPath) {
       const dirname = this.options.dirname;
 
@@ -378,22 +439,31 @@ const pluginFactory = function(Plugin) {
       await rename(oldPath, newPath);
     }
 
-    async rm(filename) {
+    /**
+     * Delete a file or directory
+     *
+     * @param {String} oldPath - Current pathname.
+     * @param {String} newPath - New pathname.
+     * @return Promise
+     */
+    async rm(pathname) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot remove file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
       }
 
-      filename = path.join(dirname, filename);
+      pathname = path.join(dirname, pathname);
 
-      if (!this._checkInDir(filename)) {
+      if (!this._checkInDir(pathname)) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot remove file from outside directory "${dirname}"`);
       }
 
-      await rm(filename);
+      // @todo
+      await rm(pathname);
     }
 
+    /** @private */
     _checkInDir(filename) {
       const { dirname } = this.options;
       const rel = path.relative(dirname, filename);
@@ -401,6 +471,7 @@ const pluginFactory = function(Plugin) {
       return !rel.startsWith('..');
     }
 
+    /** @private */
     _parseTree() {
       const { dirname, publicPath, depth } = this.options;
       // cf. https://www.npmjs.com/package/directory-tree
@@ -475,6 +546,7 @@ const pluginFactory = function(Plugin) {
       return tree;
     }
 
+    /** @private */
     _queueEvent(event, pathname) {
       clearTimeout(this._batchTimeout);
       // if for some reason chokidar propagates an absolute pathname (probably because
@@ -540,6 +612,8 @@ const pluginFactory = function(Plugin) {
       }, this._batchEventTimeoutDuration);
     }
   };
+
+  return PluginFilesystemServer;
 };
 
 export default pluginFactory;

@@ -6,20 +6,22 @@ import { isString, isBrowser, idGenerator } from '@ircam/sc-utils';
 
 export default (fetch, FormData) => {
   return function pluginFactory(Plugin) {
-    return class PluginFilesystem extends Plugin {
+    /**
+     * Client-side representation of the soundworks' filesystem plugin.
+     */
+    class PluginFilesystemClient extends Plugin {
       constructor(client, id, options) {
         super(client, id);
 
-        const defaults = {
-          // add option to enable/disable writeFile, mkdir, rename and rm (?)
-        };
+        const defaults = {};
 
-        this.options = Object.assign({}, defaults, options);
+        this.options = Object.assign(defaults, options);
 
         this._commandPromises = new Map();
         this._commandIdGenerator = idGenerator();
       }
 
+      /** @private */
       async start() {
         await super.start();
 
@@ -40,21 +42,40 @@ export default (fetch, FormData) => {
         });
       }
 
+      /** @private */
       async stop() {
         await this._treeState.detach();
 
         await super.stop();
       }
 
+      /**
+       * Return the current filesystem tree.
+       */
       getTree() {
         return this._treeState.get('tree');
       }
 
+      /**
+       * Register a callback to execute when a file is created, modified or deleted
+       * on the underlying directory. The callback will receive the updated `tree`
+       * and the list of `events` describing the modifications made on the tree.
+       *
+       * @param {Function} callback - Callback function to execute
+       * @param {boolean} [executeListener=false] - If true, execute the given
+       *  callback immediately.
+       * @return {Function} Function that unregister the listener when executed.
+       */
       onUpdate(callback, executeListener = false) {
         return this._treeState.onUpdate(callback, executeListener);
       }
 
       /**
+       * Return the tree as flat map of <filename, url>
+       *
+       * @param {String} filterExt - File extension to retrieve in the list
+       * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
+       *  from the keys
        * @return {Object} - key/value pairs of { filename[.ext] : url }
        */
       getTreeAsUrlMap(filterExt, keepExtension = false) {
@@ -87,6 +108,10 @@ export default (fetch, FormData) => {
         return map;
       }
 
+      /**
+       * Return a node from the tree matching the given path.
+       * @param {String} path - path of the node to be retrieved
+       */
       findInTree(pathOrUrl, tree = null) {
         if (tree === null) {
           tree = this.getTree();
@@ -115,7 +140,11 @@ export default (fetch, FormData) => {
       }
 
       /**
-       * data can be string or Blob
+       * Write a file
+       *
+       * @param {String} filename - Name of the file.
+       * @param {String|Blob} data - Content of the file.
+       * @return Promise
        */
       async writeFile(filename, data) {
         return new Promise(async (resolve, reject) => {
@@ -164,6 +193,12 @@ export default (fetch, FormData) => {
         });
       }
 
+      /**
+       * Create a directory
+       *
+       * @param {String} pathname - Path of the directory.
+       * @return Promise
+       */
       mkdir(filename) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
@@ -176,6 +211,13 @@ export default (fetch, FormData) => {
         });
       }
 
+      /**
+       * Rename a file or directory
+       *
+       * @param {String} oldPath - Current pathname.
+       * @param {String} newPath - New pathname.
+       * @return Promise
+       */
       rename(oldPath, newPath) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
@@ -188,6 +230,13 @@ export default (fetch, FormData) => {
         });
       }
 
+      /**
+       * Delete a file or directory
+       *
+       * @param {String} oldPath - Current pathname.
+       * @param {String} newPath - New pathname.
+       * @return Promise
+       */
       rm(filename) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
@@ -200,5 +249,7 @@ export default (fetch, FormData) => {
         });
       }
     }
+
+    return PluginFilesystemClient;
   }
 }
