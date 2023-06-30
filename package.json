@@ -6,6 +6,14 @@
     "Benjamin Matuszewski"
   ],
   "license": "BSD-3-Clause",
+  "type": "module",
+  "exports": {
+    "./client.js": {
+      "module": "./src/PluginFilesystemClient.browser.js",
+      "node": "./src/PluginFilesystemClient.node.js"
+    },
+    "./server.js": "./src/PluginFilesystemServer.js"
+  },
   "scripts": {
     "api": "jsdoc-to-readme --src src/*.js",
     "lint": "npx eslint src && npx eslint tests",
@@ -16,14 +24,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module",
-  "exports": {
-    "./client.js": {
-      "module": "./src/PluginFilesystemClient.browser.js",
-      "node": "./src/PluginFilesystemClient.node.js"
-    },
-    "./server.js": "./src/PluginFilesystemServer.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/collective-soundworks/soundworks-plugin-filesystem"
@@ -31,7 +31,7 @@
   "bugs": {
     "url": "https://github.com/collective-soundworks/soundworks-plugin-filesystem/issues"
   },
-  "homepage": "https://github.com/collective-soundworks/soundworks-plugin-filesystem#readme",
+  "homepage": "https://soundworks.dev",
   "dependencies": {
     "@ircam/sc-utils": "^1.0.1",
     "chokidar": "^3.5.2",
