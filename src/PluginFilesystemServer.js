@@ -144,10 +144,10 @@ const pluginFactory = function(Plugin) {
 
         switch (action) {
           case 'writeFile': {
-            const { filename, data } = payload;
+            const { pathname, data } = payload;
 
             try {
-              await this.writeFile(filename, data);
+              await this.writeFile(pathname, data);
               client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
               client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
@@ -155,10 +155,10 @@ const pluginFactory = function(Plugin) {
             break;
           }
           case 'mkdir': {
-            const { filename } = payload;
+            const { pathname } = payload;
 
             try {
-              await this.mkdir(filename);
+              await this.mkdir(pathname);
               client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
               client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
@@ -177,10 +177,10 @@ const pluginFactory = function(Plugin) {
             break;
           }
           case 'rm': {
-            const { filename } = payload;
+            const { pathname } = payload;
 
             try {
-              await this.rm(filename);
+              await this.rm(pathname);
               client.socket.send(`sw:plugin:${this.id}:ack`, reqId);
             } catch (err) {
               client.socket.send(`sw:plugin:${this.id}:err`, reqId, err.message);
@@ -370,24 +370,24 @@ const pluginFactory = function(Plugin) {
     /**
      * Write a file
      *
-     * @param {String} filename - Name of the file.
+     * @param {String} pathname - Pathname.
      * @param {String|Blob} data - Content of the file.
      * @return {Promise}
      */
-    async writeFile(filename, data) {
+    async writeFile(pathname, data) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot write file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
       }
 
-      filename = path.join(dirname, filename);
+      pathname = path.join(dirname, pathname);
 
-      if (!this._checkInDir(filename)) {
+      if (!this._checkInDir(pathname)) {
         throw new Error(`[soundworks:PluginFilesystem] Cannot write file outside directory "${dirname}"`);
       }
 
-      await writeFile(filename, data);
+      await writeFile(pathname, data);
     }
 
     /**
@@ -444,8 +444,7 @@ const pluginFactory = function(Plugin) {
     /**
      * Delete a file or directory
      *
-     * @param {String} oldPath - Current pathname.
-     * @param {String} newPath - New pathname.
+     * @param {String} pathname - Pathname.
      * @return {Promise}
      */
     async rm(pathname) {
@@ -466,9 +465,9 @@ const pluginFactory = function(Plugin) {
     }
 
     /** @private */
-    _checkInDir(filename) {
+    _checkInDir(pathname) {
       const { dirname } = this.options;
-      const rel = path.relative(dirname, filename);
+      const rel = path.relative(dirname, pathname);
 
       return !rel.startsWith('..');
     }

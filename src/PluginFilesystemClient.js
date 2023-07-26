@@ -144,11 +144,11 @@ export default (fetch, FormData) => {
       /**
        * Write a file
        *
-       * @param {String} filename - Name of the file.
+       * @param {String} pathname - Pathname.
        * @param {String|Blob} data - Content of the file.
        * @return {Promise}
        */
-      async writeFile(filename, data) {
+      async writeFile(pathname, data) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
           this._commandPromises.set(reqId, { resolve, reject })
@@ -156,14 +156,14 @@ export default (fetch, FormData) => {
           if (isString(data)) {
             this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
               action: 'writeFile',
-              payload: { filename, data },
+              payload: { pathname, data },
             });
           } else if (data instanceof Blob) {
             const form = new FormData();
             form.append('clientId', this.client.id);
             form.append('token', this.client.token);
             form.append('reqId', reqId);
-            form.append(filename, data);
+            form.append(pathname, data);
 
             // for node we need to build the url
             let url = `/sw/plugin/${this.id}/upload`;
@@ -201,14 +201,14 @@ export default (fetch, FormData) => {
        * @param {String} pathname - Path of the directory.
        * @return {Promise}
        */
-      mkdir(filename) {
+      mkdir(pathname) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
           this._commandPromises.set(reqId, { resolve, reject });
 
           this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
             action: 'mkdir',
-            payload: { filename },
+            payload: { pathname },
           });
         });
       }
@@ -235,18 +235,17 @@ export default (fetch, FormData) => {
       /**
        * Delete a file or directory
        *
-       * @param {String} oldPath - Current pathname.
-       * @param {String} newPath - New pathname.
+       * @param {String} pathname - Pathname.
        * @return {Promise}
        */
-      rm(filename) {
+      rm(pathname) {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
           this._commandPromises.set(reqId, { resolve, reject })
 
           this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
             action: 'rm',
-            payload: { filename },
+            payload: { pathname },
           });
         });
       }
