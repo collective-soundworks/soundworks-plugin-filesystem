@@ -4,26 +4,6 @@
 
 [`soundworks`](https://soundworks.dev) plugin to watch directories and update their contents from any node.
 
-## Table of Contents
-
-<!-- toc -->
-
-- [Installation](#installation)
-- [Usage](#usage)
-  * [Server](#server)
-  * [Client](#client)
-- [Notes](#notes)
-  * [Reading files](#reading-files)
-  * [Security](#security)
-- [API](#api)
-  * [Classes](#classes)
-  * [PluginFilesystemClient](#pluginfilesystemclient)
-  * [PluginFilesystemServer](#pluginfilesystemserver)
-- [Credits](#credits)
-- [License](#license)
-
-<!-- tocstop -->
-
 ## Installation
 
 ```sh
