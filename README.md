@@ -36,8 +36,8 @@ npm install @soundworks/plugin-filesystem --save
 
 ```js
 // index.js
-import { Server } from '@soundworks/core/server';
-import pluginFilesystem from '@soundworks/plugin-filesystem/server';
+import { Server } from '@soundworks/core/server.js';
+import pluginFilesystem from '@soundworks/plugin-filesystem/server.js';
 
 const server = new Server();
 server.pluginManager.register('filesystem', pluginFilesystem, {
@@ -52,7 +52,7 @@ server.pluginManager.register('filesystem', pluginFilesystem, {
 
 await server.start();
 
-const filesystem = await servre.pluginManager.get('filesystem');
+const filesystem = await server.pluginManager.get('filesystem');
 await filesystem.writeFile('my-file.txt', 'Hello Server');
 ```
 
@@ -62,8 +62,8 @@ await filesystem.writeFile('my-file.txt', 'Hello Server');
 
 ```js
 // index.js
-import { Client } from '@soundworks/core/client';
-import pluginFilesystem from '@soundworks/plugin-filesystem/client';
+import { Client } from '@soundworks/core/client.js';
+import pluginFilesystem from '@soundworks/plugin-filesystem/client.js';
 
 const client = new Client();
 client.pluginManager.register('filesystem', pluginFilesystem, {});
