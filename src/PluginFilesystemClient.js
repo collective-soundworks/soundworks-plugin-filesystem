@@ -45,7 +45,6 @@ export default (fetch, FormData) => {
       /** @private */
       async stop() {
         await this._treeState.detach();
-
         await super.stop();
       }
 
