@@ -46,6 +46,7 @@ const pluginFactory = function(Plugin) {
         dirname: null,
         publicPath: null,
         depth: undefined, // match chokidar default
+        chokidarOptions: {},
       };
 
       this.options = Object.assign(defaults, options);
@@ -291,6 +292,8 @@ const pluginFactory = function(Plugin) {
           ignoreInitial: true,
           depth: depth,
         };
+
+        Object.assign(options, this.options.chokidarOptions);
 
         const watcher = chokidar.watch(dirname, options);
 
