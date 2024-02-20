@@ -245,7 +245,7 @@ const pluginFactory = function(Plugin) {
       }
 
       // discard tree
-      this._treeState.set({ tree: null })
+      this._treeState.set({ tree: null });
 
       // nothing left to do, this filesystem is in idle state
       if (dirname === null) {
@@ -615,7 +615,7 @@ const pluginFactory = function(Plugin) {
         this._treeState.set({ tree: newTree, events });
       }, this._batchEventTimeoutDuration);
     }
-  };
+  }
 
   return PluginFilesystemServer;
 };
