@@ -46,6 +46,7 @@ const pluginFactory = function(Plugin) {
         dirname: null,
         publicPath: null,
         depth: undefined, // match chokidar default
+        chokidarOptions: {},
       };
 
       this.options = Object.assign(defaults, options);
@@ -244,7 +245,7 @@ const pluginFactory = function(Plugin) {
       }
 
       // discard tree
-      this._treeState.set({ tree: null })
+      this._treeState.set({ tree: null });
 
       // nothing left to do, this filesystem is in idle state
       if (dirname === null) {
@@ -291,6 +292,8 @@ const pluginFactory = function(Plugin) {
           ignoreInitial: true,
           depth: depth,
         };
+
+        Object.assign(options, this.options.chokidarOptions);
 
         const watcher = chokidar.watch(dirname, options);
 
@@ -612,7 +615,7 @@ const pluginFactory = function(Plugin) {
         this._treeState.set({ tree: newTree, events });
       }, this._batchEventTimeoutDuration);
     }
-  };
+  }
 
   return PluginFilesystemServer;
 };
