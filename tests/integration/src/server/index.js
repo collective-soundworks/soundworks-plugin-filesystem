@@ -33,7 +33,6 @@ server.useDefaultApplicationTemplate();
 server.pluginManager.register('filesystem', pluginFilesystem, {
   dirname: 'test-fs',
 });
-// server.stateManager.registerSchema('my-schema', definition);
 
 /**
  * Launch application (init plugins, http server, etc.)

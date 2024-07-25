@@ -79,8 +79,8 @@ export default (fetch, FormData) => {
        * @return {Object} Map of `<filename, url>`
        */
       getTreeAsUrlMap(filterExt, keepExtension = false) {
+        const tree = this.getTree();
         let map = {};
-        let tree = this.getTree();
 
         if (!('url' in tree)) {
           throw new Error(`[soundworks:PluginFilesystem] Cannot create map, filesystem does not expose urls. Define server "options.publicPath" to expose public urls`);
@@ -110,18 +110,16 @@ export default (fetch, FormData) => {
 
       /**
        * Return a node from the tree matching the given path.
-       * @param {String} path - Path of the node to be retrieved.
+       * @param {String} pathOrUrl - Path of the node to be retrieved, relative to
+       *  `options.dirname` or URL of the node.
        * @return {Object}
        */
-      findInTree(pathOrUrl, tree = null) {
-        if (tree === null) {
-          tree = this.getTree();
-        }
-
+      findInTree(pathOrUrl) {
+        const tree = this.getTree();
         let leaf = null;
 
         (function parse(node) {
-          if (node.path === pathOrUrl || node.url === pathOrUrl) {
+          if (node.relPath === pathOrUrl || node.url === pathOrUrl) {
             leaf = node;
             return;
           }
@@ -140,10 +138,19 @@ export default (fetch, FormData) => {
         return leaf;
       }
 
+      // /**
+      //  * Read a file
+      //  * @param {String} pathname - Pathname, relative to `options.dirname`.
+      //  * @return {Promise<Blob>}
+      //  */
+      // async readFile(pathname) {
+      //   const tr = this.findInTree('.*')
+      // }
+
       /**
        * Write a file
        *
-       * @param {String} pathname - Pathname.
+       * @param {String} pathname - Pathname, relative to `options.dirname`.
        * @param {String|Blob} data - Content of the file.
        * @return {Promise}
        */
@@ -197,7 +204,7 @@ export default (fetch, FormData) => {
       /**
        * Create a directory
        *
-       * @param {String} pathname - Path of the directory.
+       * @param {String} pathname - Path of the directory, relative to `options.dirname`.
        * @return {Promise}
        */
       mkdir(pathname) {
@@ -215,8 +222,8 @@ export default (fetch, FormData) => {
       /**
        * Rename a file or directory
        *
-       * @param {String} oldPath - Current pathname.
-       * @param {String} newPath - New pathname.
+       * @param {String} oldPath - Current pathname, relative to `options.dirname`.
+       * @param {String} newPath - New pathname, relative to `options.dirname`.
        * @return {Promise}
        */
       rename(oldPath, newPath) {
@@ -234,7 +241,7 @@ export default (fetch, FormData) => {
       /**
        * Delete a file or directory
        *
-       * @param {String} pathname - Pathname.
+       * @param {String} pathname - Pathname, relative to `options.dirname`.
        * @return {Promise}
        */
       rm(pathname) {

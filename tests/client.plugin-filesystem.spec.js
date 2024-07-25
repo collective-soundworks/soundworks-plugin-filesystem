@@ -114,9 +114,10 @@ describe(`[client] PluginFilesystem`, () => {
       await client.start();
 
       const filesystem = await client.pluginManager.get('filesystem');
-      const node = filesystem.findInTree('tests/assets/my-file.json');
+      const node = filesystem.findInTree('my-file.json');
 
       assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.relPath, 'my-file.json');
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.type, 'file');
       assert.equal(node.url, '/public/my-file.json');

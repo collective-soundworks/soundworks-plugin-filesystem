@@ -337,18 +337,15 @@ const pluginFactory = function(Plugin) {
 
     /**
      * Return a node from the tree matching the given path.
-     * @param {String} path - path of the node to be retrieved
+     * @param {String} pathname - Pathname, relative to `options.dirname`.
      * @return {Object}
      */
-    findInTree(path, tree = null) {
-      if (tree === null) {
-        tree = this.getTree();
-      }
-
+    findInTree(pathname) {
+      const tree = this._treeState.getUnsafe('tree');
       let leaf = null;
 
       (function parse(node) {
-        if (node.path === path) {
+        if (node.relPath === pathname) {
           leaf = node;
           return;
         }
@@ -370,7 +367,7 @@ const pluginFactory = function(Plugin) {
     /**
      * Write a file
      *
-     * @param {String} pathname - Pathname.
+     * @param {String} pathname - Pathname, relative to `options.dirname`.
      * @param {String|Blob} data - Content of the file.
      * @return {Promise}
      */
@@ -393,7 +390,7 @@ const pluginFactory = function(Plugin) {
     /**
      * Create a directory
      *
-     * @param {String} pathname - Path of the directory.
+     * @param {String} pathname - Path of the directory, relative to `options.dirname`.
      * @return {Promise}
      */
     async mkdir(pathname) {
@@ -415,8 +412,8 @@ const pluginFactory = function(Plugin) {
     /**
      * Rename a file or directory
      *
-     * @param {String} oldPath - Current pathname.
-     * @param {String} newPath - New pathname.
+     * @param {String} oldPath - Current pathname, relative to `options.dirname`.
+     * @param {String} newPath - New pathname, relative to `options.dirname`.
      * @return {Promise}
      */
     async rename(oldPath, newPath) {
@@ -444,7 +441,7 @@ const pluginFactory = function(Plugin) {
     /**
      * Delete a file or directory
      *
-     * @param {String} pathname - Pathname.
+     * @param {String} pathname - Pathname, relative to `options.dirname`.
      * @return {Promise}
      */
     async rm(pathname) {
@@ -470,6 +467,39 @@ const pluginFactory = function(Plugin) {
       const rel = path.relative(dirname, pathname);
 
       return !rel.startsWith('..');
+    }
+
+    /**
+     * Return a node from the tree matching the given path.
+     * @param {String} path - absolute path of the node to be retrieved
+     * @return {Object}
+     * @private
+     */
+    _getNode(path, tree = null) {
+      if (tree === null) {
+        tree = this._treeState.getUnsafe('tree');
+      }
+
+      let leaf = null;
+
+      (function parse(node) {
+        if (node.path === path) {
+          leaf = node;
+          return;
+        }
+
+        if (node.children) {
+          for (let child of node.children) {
+            if (leaf !== null) {
+              break;
+            }
+
+            parse(child);
+          }
+        }
+      }(tree));
+
+      return leaf;
     }
 
     /** @private */
@@ -558,14 +588,14 @@ const pluginFactory = function(Plugin) {
       this._eventQueue.push([event, pathname]);
 
       this._batchTimeout = setTimeout(() => {
-        const oldTree = this.getTree();
+        const oldTree = this._treeState.getUnsafe('tree');
         const newTree = this._parseTree();
 
         const events = this._eventQueue.map(([event, pathname]) => {
           switch (event) {
             case 'add':
             case 'addDir': {
-              const node = this.findInTree(pathname, newTree);
+              const node = this._getNode(pathname, newTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created
@@ -577,7 +607,7 @@ const pluginFactory = function(Plugin) {
               return { type: 'create', node };
             }
             case 'change': {
-              const node = this.findInTree(pathname, newTree);
+              const node = this._getNode(pathname, newTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created
@@ -590,7 +620,7 @@ const pluginFactory = function(Plugin) {
             }
             case 'unlink':
             case 'unlinkDir': {
-              const node = this.findInTree(pathname, oldTree);
+              const node = this._getNode(pathname, oldTree);
 
               if (node === null) {
                 // this can occur for example when a directory with files is created

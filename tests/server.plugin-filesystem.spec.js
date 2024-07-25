@@ -542,32 +542,26 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.findInTree(path, tree = null) -> TreeNode', () => {
-    it(`should return a tree node from a path`, async () => {
-      const tree = {
-        path: 'tests/assets',
-        name: 'assets',
-        children: [
-          {
-            path: 'tests/assets/my-file.json',
-            name: 'my-file.json',
-            size: 17,
-            type: 'file',
-            extension: '.json'
-          }
-        ],
-        size: 17,
-        type: 'directory'
-      };
+  describe('# plugin.findInTree(path) -> TreeNode', () => {
+    beforeEach(() => {
+      const data = { a: true, b: 42};
+      const testFilename = path.join('tests', 'assets', 'my-file.json');
+      fs.mkdirSync(path.join('tests', 'assets'));
+      fs.writeFileSync(testFilename, JSON.stringify(data));
+    });
 
+    it(`should return a tree node from a path`, async () => {
       const server = new Server(config);
-      server.pluginManager.register('filesystem', serverFilesystemPlugin);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
       await server.start();
       const filesystem = await server.pluginManager.get('filesystem');
 
-      const node = filesystem.findInTree('tests/assets/my-file.json', tree);
+      const node = filesystem.findInTree('my-file.json');
 
       assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.relPath, 'my-file.json');
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.type, 'file');
       assert.equal(node.extension, '.json');

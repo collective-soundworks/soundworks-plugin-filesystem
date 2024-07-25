@@ -148,7 +148,7 @@ describe('# Integration test', () => {
     it(`should not access protected methods`, async function() {
       this.timeout(10 * 1000);
 
-      browser = await puppeteer.launch();
+      browser = await puppeteer.launch({ headless: 'new' });
       page = await browser.newPage();
 
       return new Promise(async (resolve, reject) => {
@@ -230,7 +230,7 @@ describe('# Integration test', () => {
     it(`should not access protected methods`, async function() {
       this.timeout(10 * 1000);
 
-      browser = await puppeteer.launch();
+      browser = await puppeteer.launch({ headless: 'new' });
       page = await browser.newPage();
 
       return new Promise(async (resolve, reject) => {
