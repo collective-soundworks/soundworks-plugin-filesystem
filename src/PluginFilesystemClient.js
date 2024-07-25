@@ -79,11 +79,11 @@ export default (fetch, FormData) => {
        * @return {Object} Map of `<filename, url>`
        */
       getTreeAsUrlMap(filterExt, keepExtension = false) {
-        const tree = this.getTree();
+        const tree = this._treeState.getUnsafe('tree');
         let map = {};
 
         if (!('url' in tree)) {
-          throw new Error(`[soundworks:PluginFilesystem] Cannot create map, filesystem does not expose urls. Define server "options.publicPath" to expose public urls`);
+          throw new Error(`Cannot execute 'getTreeAsUrlMap' on PluginFilesystem: Current filesystem configuration does not expose urls. You must define server "options.publicPath" to expose public urls`);
         }
 
         let regexp = new RegExp(`\.?${filterExt}$`);
@@ -115,8 +115,17 @@ export default (fetch, FormData) => {
        * @return {Object}
        */
       findInTree(pathOrUrl) {
-        const tree = this.getTree();
+        const tree = this._treeState.getUnsafe('tree');
+
+        if (tree === null) {
+          return null;
+        }
+
         let leaf = null;
+
+        // remove leading "./"
+        // @todo - improve, this is probably a bit weak
+        pathOrUrl = pathOrUrl.replace(/^\.\//, '');
 
         (function parse(node) {
           if (node.relPath === pathOrUrl || node.url === pathOrUrl) {
@@ -148,11 +157,11 @@ export default (fetch, FormData) => {
         const node = this.findInTree(pathname);
 
         if (node === null) {
-          throw new Error(`Cannot execute 'readFile' on PluginFilesystemClient: pathname "${pathname}" not found in file tree`);
+          throw new Error(`Cannot execute 'readFile' on PluginFilesystem: pathname "${pathname}" not found in file tree`);
         }
 
         if (node.type === 'directory') {
-          throw new Error(`Cannot execute 'readFile' on PluginFilesystemClient: pathname "${pathname}" is a directory`);
+          throw new Error(`Cannot execute 'readFile' on PluginFilesystem: pathname "${pathname}" is a directory`);
         }
 
         let { url } = node;
@@ -172,10 +181,10 @@ export default (fetch, FormData) => {
        * Write a file
        *
        * @param {String} pathname - Pathname, relative to `options.dirname`.
-       * @param {String|Blob} data - Content of the file.
+       * @param {String|File|Blob} [data=''] - Content of the file.
        * @return {Promise}
        */
-      async writeFile(pathname, data) {
+      async writeFile(pathname, data = '') {
         return new Promise(async (resolve, reject) => {
           const reqId = this._commandIdGenerator.next().value;
           this._commandPromises.set(reqId, { resolve, reject })
@@ -209,7 +218,7 @@ export default (fetch, FormData) => {
               if (res.status === 403) {
                 const { reject } = this._commandPromises.get(reqId);
                 this._commandPromises.delete(reqId);
-
+                // keep this, must match server-side error
                 reject(new Error(`[soundworks:PluginFilesystem] Action is not permitted`));
               }
             } catch (err) {
@@ -217,7 +226,7 @@ export default (fetch, FormData) => {
             }
           } else {
             this._commandPromises.delete(reqId);
-            reject(`[soundworks:PluginFilesystem] writeFile only accept String, File or Blob instances`);
+            reject(new TypeError(`Cannot execute 'writeFile' on PluginFilesystem: argument 1 must be a String, a File or a Blob instance`));
           }
         });
       }

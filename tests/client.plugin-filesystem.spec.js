@@ -64,7 +64,6 @@ describe(`[client] PluginFilesystem`, () => {
     await server.stop();
   });
 
-
   describe('# plugin.constructor(server, id, name)', async () => {
     it(`should register and start properly`, async () => {
       const client = new Client({ role: 'test', ...config });
@@ -115,6 +114,24 @@ describe(`[client] PluginFilesystem`, () => {
 
       const filesystem = await client.pluginManager.get('filesystem');
       const node = filesystem.findInTree('my-file.json');
+
+      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.relPath, 'my-file.json');
+      assert.equal(node.name, 'my-file.json');
+      assert.equal(node.type, 'file');
+      assert.equal(node.url, '/public/my-file.json');
+
+      await client.stop();
+    });
+
+    it(`should find a node according to its path even with "./" prefix)`, async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const node = filesystem.findInTree('./my-file.json');
 
       assert.equal(node.path, 'tests/assets/my-file.json');
       assert.equal(node.relPath, 'my-file.json');
@@ -214,7 +231,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe.only('# await plugin.readFile(filename)', () => {
+  describe('# await plugin.readFile(filename)', () => {
     it('should retrieve a blob', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
@@ -336,6 +353,21 @@ describe(`[client] PluginFilesystem`, () => {
 
       client.stop();
     });
+
+    it('should resolve once tree is up to date', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.writeFile('my-string-await.txt', 'coucou');
+      const node = filesystem.findInTree('my-string-await.txt');
+
+      assert.isNotNull(node);
+
+      await client.stop();
+    });
   });
 
   describe('# await plugin.mkdir(filename)', () => {
@@ -374,6 +406,21 @@ describe(`[client] PluginFilesystem`, () => {
       if (!errored) {
         assert.fail('should have thrown');
       }
+    });
+
+    it('should resolve once tree is up to date', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.mkdir('my-dir-await');
+      const node = filesystem.findInTree('my-dir-await');
+
+      assert.isNotNull(node);
+
+      await client.stop();
     });
   });
 
@@ -421,6 +468,21 @@ describe(`[client] PluginFilesystem`, () => {
         assert.fail('should have thrown');
       }
     });
+
+    it('should resolve once tree is up to date', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      await filesystem.rename('my-file.json', 'my-file-renamed-await.json');
+      const node = filesystem.findInTree('./my-file-renamed-await.json');
+
+      assert.isNotNull(node);
+
+      await client.stop();
+    });
   });
 
   describe('# await plugin.rm(filename)', () => {
@@ -459,6 +521,23 @@ describe(`[client] PluginFilesystem`, () => {
       if (!errored) {
         assert.fail('should have thrown');
       }
+    });
+
+    it('should resolve once tree is up to date', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const node1 = filesystem.findInTree('my-file.json');
+      assert.isNotNull(node1);
+
+      await filesystem.rm('./my-file.json');
+      const node2 = filesystem.findInTree('my-file.json');
+      assert.isNull(node2);
+
+      await client.stop();
     });
   });
 });

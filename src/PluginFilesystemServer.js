@@ -58,7 +58,7 @@ const pluginFactory = function(Plugin) {
       // queue to batch file system events
       this._eventQueue = [];
       this._batchTimeout = null;
-      this._batchEventTimeoutDuration = 100; // in ms
+      this._batchEventTimeoutDuration = 50; // in ms
 
       // generate schema from `config`
       const schema = {
@@ -211,15 +211,15 @@ const pluginFactory = function(Plugin) {
      */
     async switch(options) {
       if (!isPlainObject(options)) {
-        throw new Error(`[soundworks:PluginFilesystem] Invalid options, options should an object of type { dirname[, publicPath] }`);
+        throw new TypeError(`Cannot execute 'switch' on PluginFilsystem: Invalid options, options should an object of type { dirname[, publicPath] }`);
       }
 
       if (!('dirname' in options)) {
-        throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.dirname", "options.dirname" is mandatory`);
+        throw new TypeError(`Cannot execute 'switch' on PluginFilsystem: Invalid option "options.dirname", "options.dirname" is mandatory`);
       }
 
       if (!isString(options.dirname) && options.dirname !== null) {
-        throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.dirname", should be string or null`);
+        throw new TypeError(`Cannot execute 'switch' on PluginFilsystem: Invalid option "options.dirname", should be string or null`);
       }
 
       this.options = Object.assign(this.options, options);
@@ -266,13 +266,13 @@ const pluginFactory = function(Plugin) {
       // if some static route and middleware already exists for that publicPath.
       if (publicPath !== null && publicPath !== '' && publicPath !== '/') {
         if (!isString(publicPath)) {
-          throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", should be a string`);
+          throw new TypeError(`Cannot execute 'switch' on PluginFilsystem: Invalid option "options.publicPath", should be a string`);
         }
 
         // throw if a route already exists
         this.server.router._router.stack.forEach(layer => {
           if (layer.regexp.test(publicPath)) {
-            throw new Error(`[soundworks:PluginFilesystem] Invalid option "options.publicPath", "${publicPath}" route is already registered in "server.router"`);
+            throw new Error(`Cannot execute 'switch' on PluginFilsystem:: Invalid option "options.publicPath", "${publicPath}" route is already registered in "server.router"`);
           }
         });
 
@@ -341,27 +341,15 @@ const pluginFactory = function(Plugin) {
      * @return {Object}
      */
     findInTree(pathname) {
-      const tree = this._treeState.getUnsafe('tree');
-      let leaf = null;
+      const dirname = this.options.dirname;
 
-      (function parse(node) {
-        if (node.relPath === pathname) {
-          leaf = node;
-          return;
-        }
+      if (this.options.dirname === null) {
+        throw new Error(`Cannot execute 'findInTree' on PluginFilsystem: Cannot write file while filesystem is idle, you should call the 'switch' method first`);
+      }
 
-        if (node.children) {
-          for (let child of node.children) {
-            if (leaf !== null) {
-              break;
-            }
+      pathname = path.join(dirname, pathname);
 
-            parse(child);
-          }
-        }
-      }(tree));
-
-      return leaf;
+      return this._getNode(pathname);
     }
 
     /**
@@ -374,13 +362,13 @@ const pluginFactory = function(Plugin) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot write file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+        throw new Error(`Cannot execute 'readFile' on PluginFilsystem: Cannot write file while filesystem is idle, you should call the 'switch' method first`);
       }
 
       pathname = path.join(dirname, pathname);
 
       if (!this._checkInDir(pathname)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot write file outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'readFile' on PluginFilsystem: Cannot write file outside directory "${dirname}"`);
       }
 
       const buffer = await readFile(pathname);
@@ -398,16 +386,27 @@ const pluginFactory = function(Plugin) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot write file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+        throw new Error(`Cannot execute 'writeFile' on PluginFilsystem: Cannot write file while filesystem is idle, you should call the 'switch' method first`);
       }
 
       pathname = path.join(dirname, pathname);
 
       if (!this._checkInDir(pathname)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot write file outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'writeFile' on PluginFilsystem: Cannot write file outside directory "${dirname}"`);
       }
 
+      const promise = new Promise((resolve) => {
+        const unsubscribe = this.onUpdate(() => {
+          if (this._getNode(pathname) !== null) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
       await writeFile(pathname, data);
+
+      return promise;
     }
 
     /**
@@ -420,16 +419,27 @@ const pluginFactory = function(Plugin) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot create dir while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+        throw new Error(`Cannot execute 'mkdir' on PluginFilsystem: Cannot create directory while filesystem is idle, you should call the 'switch' method first`);
       }
 
       pathname = path.join(dirname, pathname);
 
       if (!this._checkInDir(pathname)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot create dir outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'mkdir' on PluginFilsystem: Cannot create directory outside directory "${dirname}"`);
       }
 
+      const promise = new Promise((resolve) => {
+        const unsubscribe = this.onUpdate(() => {
+          if (this._getNode(pathname) !== null) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
       await mkdir(pathname, { recursive: true });
+
+      return promise;
     }
 
     /**
@@ -443,22 +453,33 @@ const pluginFactory = function(Plugin) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot rename while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+        throw new Error(`Cannot execute 'rename' on PluginFilsystem: Cannot rename while filesystem is idle, you should call the 'switch' method first`);
       }
 
       oldPath = path.join(dirname, oldPath);
 
       if (!this._checkInDir(oldPath)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot rename from outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'rename' on PluginFilsystem: Cannot rename from outside directory "${dirname}"`);
       }
 
       newPath = path.join(dirname, newPath);
 
       if (!this._checkInDir(newPath)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot rename to outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'rename' on PluginFilsystem: Cannot rename to outside directory "${dirname}"`);
       }
 
+      const promise = new Promise((resolve) => {
+        const unsubscribe = this.onUpdate(() => {
+          if (this._getNode(newPath) !== null) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
       await rename(oldPath, newPath);
+
+      return promise;
     }
 
     /**
@@ -471,17 +492,28 @@ const pluginFactory = function(Plugin) {
       const dirname = this.options.dirname;
 
       if (this.options.dirname === null) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot remove file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+        throw new Error(`Cannot execute 'rm' on PluginFilsystem: Cannot remove file while filesystem is idle, you should call the 'switch' method first`);
       }
 
       pathname = path.join(dirname, pathname);
 
       if (!this._checkInDir(pathname)) {
-        throw new Error(`[soundworks:PluginFilesystem] Cannot remove file from outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'rm' on PluginFilsystem: Cannot remove file from outside directory "${dirname}"`);
       }
+
+      const promise = new Promise((resolve) => {
+        const unsubscribe = this.onUpdate(() => {
+          if (this._getNode(pathname) === null) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
 
       // @todo
       await rm(pathname);
+
+      return promise;
     }
 
     /** @private */
@@ -501,6 +533,10 @@ const pluginFactory = function(Plugin) {
     _getNode(path, tree = null) {
       if (tree === null) {
         tree = this._treeState.getUnsafe('tree');
+      }
+
+      if (tree === null) {
+        return null;
       }
 
       let leaf = null;
