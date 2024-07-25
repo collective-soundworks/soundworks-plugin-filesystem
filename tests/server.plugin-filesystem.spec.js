@@ -36,16 +36,16 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  // afterEach(() => {
-  //   [
-  //     path.join('tests', 'assets'),
-  //     path.join('tests', 'public'),
-  //   ].forEach(testDir => {
-  //     if (fs.existsSync(testDir)) {
-  //       fs.rmSync(testDir, { recursive: true });
-  //     }
-  //   });
-  // });
+  afterEach(() => {
+    [
+      path.join('tests', 'assets'),
+      path.join('tests', 'public'),
+    ].forEach(testDir => {
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true });
+      }
+    });
+  });
 
   describe('# plugin.constructor(server, id, options)', async () => {
     it(`should support no options`, async () => {
@@ -656,6 +656,68 @@ describe(`[server] PluginFilesystem`, () => {
       if (counter !== 4) {
         assert.fail(`onUpdate should be called 4 time, called only ${counter}`);
       }
+    });
+  });
+
+  describe.only('# await plugin.readFile(filename)', () => {
+    it('should retrieve a blob', async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+
+      fs.writeFileSync('tests/assets/my-file.json', '{"a":true}');
+
+      const filesystem = await server.pluginManager.get('filesystem');
+      const blob = await filesystem.readFile('my-file.json');
+      const text = await blob.text();
+
+      assert.equal(text, '{"a":true}');
+      await server.stop();
+    });
+
+    it('should throw if file not found', async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        const blob = await filesystem.readFile('do-not-exists.txt');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      assert.isTrue(errored);
+      await server.stop();
+    });
+
+    it('should throw if pathname points to a directory', async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        const blob = await filesystem.readFile(''); // root dir
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      assert.isTrue(errored);
+      await server.stop();
     });
   });
 

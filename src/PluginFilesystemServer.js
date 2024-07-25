@@ -1,5 +1,5 @@
 import { existsSync, statSync, mkdirSync } from 'node:fs';
-import { writeFile, mkdir, rename, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import { isPlainObject, isString } from '@ircam/sc-utils';
@@ -362,6 +362,29 @@ const pluginFactory = function(Plugin) {
       }(tree));
 
       return leaf;
+    }
+
+    /**
+     * Read a file.
+     *
+     * @param {String} pathname - Pathname, relative to `options.dirname`.
+     * @return {Promise<Blob>}
+     */
+    async readFile(pathname) {
+      const dirname = this.options.dirname;
+
+      if (this.options.dirname === null) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot write file while filesystem is idle (should call "switch({ dirname })" with non null value beforehand)`);
+      }
+
+      pathname = path.join(dirname, pathname);
+
+      if (!this._checkInDir(pathname)) {
+        throw new Error(`[soundworks:PluginFilesystem] Cannot write file outside directory "${dirname}"`);
+      }
+
+      const buffer = await readFile(pathname);
+      return new Blob([buffer]);
     }
 
     /**

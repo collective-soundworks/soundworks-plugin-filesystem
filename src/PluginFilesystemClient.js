@@ -138,14 +138,35 @@ export default (fetch, FormData) => {
         return leaf;
       }
 
-      // /**
-      //  * Read a file
-      //  * @param {String} pathname - Pathname, relative to `options.dirname`.
-      //  * @return {Promise<Blob>}
-      //  */
-      // async readFile(pathname) {
-      //   const tr = this.findInTree('.*')
-      // }
+      /**
+       * Read a file
+       *
+       * @param {String} pathname - Pathname, relative to `options.dirname`.
+       * @return {Promise<Blob>}
+       */
+      async readFile(pathname) {
+        const node = this.findInTree(pathname);
+
+        if (node === null) {
+          throw new Error(`Cannot execute 'readFile' on PluginFilesystemClient: pathname "${pathname}" not found in file tree`);
+        }
+
+        if (node.type === 'directory') {
+          throw new Error(`Cannot execute 'readFile' on PluginFilesystemClient: pathname "${pathname}" is a directory`);
+        }
+
+        let { url } = node;
+
+        if (!isBrowser()) {
+          const { useHttps, serverAddress, port } = this.client.config.env;
+          url = `${useHttps ? 'https' : 'http'}://${serverAddress}:${port}${url}`;
+        }
+
+        const res = await fetch(url);
+        const blob = await res.blob();
+
+        return blob;
+      }
 
       /**
        * Write a file

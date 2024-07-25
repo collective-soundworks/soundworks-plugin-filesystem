@@ -214,6 +214,62 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
+  describe.only('# await plugin.readFile(filename)', () => {
+    it('should retrieve a blob', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const blob = await filesystem.readFile('my-file.json');
+      const text = await blob.text();
+
+      assert.equal(text, '{"a":true}');
+      await client.stop();
+    });
+
+    it('should throw if file not found', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        const blob = await filesystem.readFile('do-not-exists.txt');
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      assert.isTrue(errored);
+      await client.stop();
+    });
+
+    it('should throw if pathname points to a directory', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        const blob = await filesystem.readFile(''); // root dir
+      } catch(err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      assert.isTrue(errored);
+      await client.stop();
+    });
+  });
+
   describe('# await plugin.writeFile(filename, data)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
