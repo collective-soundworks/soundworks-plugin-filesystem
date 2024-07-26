@@ -354,6 +354,36 @@ describe(`[client] PluginFilesystem`, () => {
       client.stop();
     });
 
+    it.only('should throw if trying to write itself', async () => {
+      {
+        const exists = fs.existsSync('tests/assets/my-page.html');
+        assert.equal(exists, false);
+      }
+
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+      const blob = new Blob(['<h1>coucou</h1>'], { type: 'text/html' });
+
+      let errored = false;
+
+      try {
+        await filesystem.writeFile('.', blob);
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+
+      client.stop();
+    });
+
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
@@ -398,6 +428,28 @@ describe(`[client] PluginFilesystem`, () => {
 
       try {
         await filesystem.mkdir('../my-dir');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
+    it.only('should throw if trying to mkdir itself', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.mkdir('.');
       } catch (err) {
         errored = true;
         console.log(err.message);
@@ -469,6 +521,28 @@ describe(`[client] PluginFilesystem`, () => {
       }
     });
 
+    it.only('should throw if trying to mkdir itself', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.rename('.', 'ko');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
@@ -513,6 +587,28 @@ describe(`[client] PluginFilesystem`, () => {
 
       try {
         await filesystem.rm('../my-file.json');
+      } catch (err) {
+        errored = true;
+        console.log(err.message);
+      }
+
+      if (!errored) {
+        assert.fail('should have thrown');
+      }
+    });
+
+    it.only('should throw if trying to rm itself', async () => {
+      const client = new Client({ role: 'test', ...config });
+      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+
+      await client.start();
+
+      const filesystem = await client.pluginManager.get('filesystem');
+
+      let errored = false;
+
+      try {
+        await filesystem.rm('');
       } catch (err) {
         errored = true;
         console.log(err.message);

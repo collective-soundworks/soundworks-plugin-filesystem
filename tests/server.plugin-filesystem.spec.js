@@ -744,6 +744,29 @@ describe(`[server] PluginFilesystem`, () => {
       await server.stop();
     });
 
+    it.only(`should throw if trying to write itself`, async () => {
+      fs.mkdirSync(path.join('tests', 'assets'));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        await filesystem.writeFile('.', 'coucou');
+      } catch (err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      await server.stop();
+      assert.isTrue(errored);
+    });
+
     it(`should throw if trying to writeFile outside dirname`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', serverFilesystemPlugin, {
@@ -803,6 +826,38 @@ describe(`[server] PluginFilesystem`, () => {
       assert.equal(fs.existsSync(filename), true);
 
       await server.stop();
+    });
+
+    it.only(`should throw if trying to mkdir itself`, async () => {
+      fs.mkdirSync(path.join('tests', 'assets'));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored1 = false;
+      let errored2 = false;
+
+      try {
+        await filesystem.mkdir('.');
+      } catch (err) {
+        console.log(err.message);
+        errored1 = true;
+      }
+
+      try {
+        await filesystem.mkdir('../assets');
+      } catch (err) {
+        console.log(err.message);
+        errored2 = true;
+      }
+
+      await server.stop();
+      assert.isTrue(errored1);
+      assert.isTrue(errored2);
     });
 
     it(`should throw if trying to mkdir outside dirname`, async () => {
@@ -896,6 +951,29 @@ describe(`[server] PluginFilesystem`, () => {
       }
     });
 
+    it.only(`should throw if trying to rename itself`, async () => {
+      fs.mkdirSync(path.join('tests', 'assets'));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        await filesystem.rename('.');
+      } catch (err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      await server.stop();
+      assert.isTrue(errored);
+    });
+
     it(`should throw if trying to rename outside dirname (newPath)`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', serverFilesystemPlugin, {
@@ -963,6 +1041,50 @@ describe(`[server] PluginFilesystem`, () => {
       await server.stop();
     });
 
+    it(`should remove a directory`, async () => {
+      fs.mkdirSync(path.join('tests', 'assets'));
+      fs.mkdirSync(path.join('tests', 'assets', 'inner'));
+      fs.writeFileSync(path.join('tests', 'assets', 'inner', 'my-file.json'), 'coucou');
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+
+      await filesystem.rm('./inner');
+
+      const filename = path.join('tests', 'assets', 'inner');
+      assert.equal(fs.existsSync(filename), false);
+
+      await server.stop();
+    });
+
+    it.only(`should throw if trying to remove itself`, async () => {
+      fs.mkdirSync(path.join('tests', 'assets'));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      let errored = false;
+
+      try {
+        await filesystem.rm('.');
+      } catch (err) {
+        console.log(err.message);
+        errored = true;
+      }
+
+      await server.stop();
+      assert.isTrue(errored);
+    });
+
     it(`should throw if trying to rm outside dirname`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', serverFilesystemPlugin, {
@@ -982,10 +1104,7 @@ describe(`[server] PluginFilesystem`, () => {
       }
 
       await server.stop();
-
-      if (!errored) {
-        assert.fail('should have thrown');
-      }
+      assert.isTrue(errored);
     });
 
     it(`should resolve only once tree is up to date`, async () => {
@@ -1023,6 +1142,12 @@ describe(`[server] PluginFilesystem`, () => {
         let filename = 'tests/assets/in-dir.txt';
         let res = filesystem._checkInDir(filename);
         assert.equal(res, true);
+      }
+
+      {
+        let filename = './tests/assets/';
+        let res = filesystem._checkInDir(filename);
+        assert.equal(res, false);
       }
 
       {

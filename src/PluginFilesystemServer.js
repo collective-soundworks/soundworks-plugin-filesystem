@@ -459,7 +459,7 @@ const pluginFactory = function(Plugin) {
       oldPath = path.join(dirname, oldPath);
 
       if (!this._checkInDir(oldPath)) {
-        throw new Error(`Cannot execute 'rename' on PluginFilsystem: Cannot rename from outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'rename' on PluginFilsystem: Cannot rename file that is not within directory "${dirname}"`);
       }
 
       newPath = path.join(dirname, newPath);
@@ -498,7 +498,7 @@ const pluginFactory = function(Plugin) {
       pathname = path.join(dirname, pathname);
 
       if (!this._checkInDir(pathname)) {
-        throw new Error(`Cannot execute 'rm' on PluginFilsystem: Cannot remove file from outside directory "${dirname}"`);
+        throw new Error(`Cannot execute 'rm' on PluginFilsystem: Cannot remove file that is not within directory "${dirname}"`);
       }
 
       const promise = new Promise((resolve) => {
@@ -511,7 +511,7 @@ const pluginFactory = function(Plugin) {
       });
 
       // @todo
-      await rm(pathname);
+      await rm(pathname, { recursive: true });
 
       return promise;
     }
@@ -520,8 +520,8 @@ const pluginFactory = function(Plugin) {
     _checkInDir(pathname) {
       const { dirname } = this.options;
       const rel = path.relative(dirname, pathname);
-
-      return !rel.startsWith('..');
+      // consider dirname is not in itself
+      return (rel !== '') && !rel.startsWith('..');
     }
 
     /**
