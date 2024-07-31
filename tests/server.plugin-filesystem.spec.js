@@ -744,7 +744,7 @@ describe(`[server] PluginFilesystem`, () => {
       await server.stop();
     });
 
-    it.only(`should throw if trying to write itself`, async () => {
+    it(`should throw if trying to write itself`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
 
       const server = new Server(config);
@@ -828,7 +828,7 @@ describe(`[server] PluginFilesystem`, () => {
       await server.stop();
     });
 
-    it.only(`should throw if trying to mkdir itself`, async () => {
+    it(`should throw if trying to mkdir itself`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
 
       const server = new Server(config);
@@ -951,7 +951,7 @@ describe(`[server] PluginFilesystem`, () => {
       }
     });
 
-    it.only(`should throw if trying to rename itself`, async () => {
+    it(`should throw if trying to rename itself`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
 
       const server = new Server(config);
@@ -1062,7 +1062,7 @@ describe(`[server] PluginFilesystem`, () => {
       await server.stop();
     });
 
-    it.only(`should throw if trying to remove itself`, async () => {
+    it(`should throw if trying to remove itself`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
 
       const server = new Server(config);

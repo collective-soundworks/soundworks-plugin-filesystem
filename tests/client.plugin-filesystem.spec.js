@@ -354,7 +354,7 @@ describe(`[client] PluginFilesystem`, () => {
       client.stop();
     });
 
-    it.only('should throw if trying to write itself', async () => {
+    it('should throw if trying to write itself', async () => {
       {
         const exists = fs.existsSync('tests/assets/my-page.html');
         assert.equal(exists, false);
@@ -438,7 +438,7 @@ describe(`[client] PluginFilesystem`, () => {
       }
     });
 
-    it.only('should throw if trying to mkdir itself', async () => {
+    it('should throw if trying to mkdir itself', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
 
@@ -521,7 +521,7 @@ describe(`[client] PluginFilesystem`, () => {
       }
     });
 
-    it.only('should throw if trying to mkdir itself', async () => {
+    it('should throw if trying to mkdir itself', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
 
@@ -597,7 +597,7 @@ describe(`[client] PluginFilesystem`, () => {
       }
     });
 
-    it.only('should throw if trying to rm itself', async () => {
+    it('should throw if trying to rm itself', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', clientFilesystemPlugin)
 
@@ -789,3 +789,9 @@ describe(`[client] PluginFilesystem (protected)`, () => {
     }
   });
 });
+
+// describe(`MISC`, () => {
+//   it(`should properly stop if required by another plugin`, async () => {
+
+//   });
+// });
