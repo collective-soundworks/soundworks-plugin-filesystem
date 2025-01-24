@@ -37,10 +37,10 @@ npm install @soundworks/plugin-filesystem --save
 ```js
 // index.js
 import { Server } from '@soundworks/core/server.js';
-import pluginFilesystem from '@soundworks/plugin-filesystem/server.js';
+import ServerPluginFilesystem from '@soundworks/plugin-filesystem/server.js';
 
 const server = new Server();
-server.pluginManager.register('filesystem', pluginFilesystem, {
+server.pluginManager.register('filesystem', ServerPluginFilesystem, {
   // path to the watched directory, can be relative to process.cwd()
   // or absolute, in all cases file paths in the tree will be normalized
   // to be relative to `process.cwd()`
@@ -63,10 +63,10 @@ await filesystem.writeFile('my-file.txt', 'Hello Server');
 ```js
 // index.js
 import { Client } from '@soundworks/core/client.js';
-import pluginFilesystem from '@soundworks/plugin-filesystem/client.js';
+import ClientPluginFilesystem from '@soundworks/plugin-filesystem/client.js';
 
 const client = new Client();
-client.pluginManager.register('filesystem', pluginFilesystem, {});
+client.pluginManager.register('filesystem', ClientPluginFilesystem, {});
 
 await client.start();
 
@@ -84,9 +84,9 @@ According to your specific needs you can rely on other plugins (e.g. audio-buffe
 
 ### Security
 
-Being able to write and delete files from any connected client poses evident security questions, moreover if your application aims at running online. To prevent such issues, all sensible operations (i.e. other than listing the files) of the  plugin are blocked if the `env.type` config option passed to the soundworks server is set to `production`. 
+Being able to write and delete files from any connected client poses evident security questions, moreover if your application aims at running online. To prevent such issues, all sensible operations (i.e. other than listing the files) of the  plugin are blocked if the `env.type` config option passed to the soundworks server is set to `production`.
 
-In such case, only trusted clients that authentified by a login and password will be able to perform these operations.
+In such case, only trusted clients that authenticated by a login and password will be able to perform these operations.
 
 See the `config/env-**.js` files to configure your application (@todo - tutorial).
 
@@ -110,7 +110,7 @@ See the `config/env-**.js` files to configure your application (@todo - tutorial
 ### PluginFilesystemClient
 Client-side representation of the soundworks' filesystem plugin.
 
-**Kind**: global class  
+**Kind**: global class
 
 * [PluginFilesystemClient](#PluginFilesystemClient)
     * [.getTree()](#PluginFilesystemClient+getTree) ⇒ <code>Object</code>
@@ -128,7 +128,7 @@ Client-side representation of the soundworks' filesystem plugin.
 #### pluginFilesystemClient.getTree() ⇒ <code>Object</code>
 Return the current filesystem tree.
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 <a name="PluginFilesystemClient+onUpdate"></a>
 
 #### pluginFilesystemClient.onUpdate(callback, [executeListener]) ⇒ <code>function</code>
@@ -136,8 +136,8 @@ Register a callback to execute when a file is created, modified or deleted
 on the underlying directory. The callback will receive the updated `tree`
 and the list of `events` describing the modifications made on the tree.
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: <code>function</code> - Function that unregister the listener when executed.  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
+**Returns**: <code>function</code> - Function that unregister the listener when executed.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -149,8 +149,8 @@ and the list of `events` describing the modifications made on the tree.
 #### pluginFilesystemClient.getTreeAsUrlMap(filterExt, [keepExtension]) ⇒ <code>Object</code>
 Return the tree as flat map of `<filename, url>`
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
-**Returns**: <code>Object</code> - Map of `<filename, url>`  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
+**Returns**: <code>Object</code> - Map of `<filename, url>`
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -162,7 +162,7 @@ Return the tree as flat map of `<filename, url>`
 #### pluginFilesystemClient.findInTree(pathOrUrl) ⇒ <code>Object</code>
 Return a node from the tree matching the given path.
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -173,7 +173,7 @@ Return a node from the tree matching the given path.
 #### pluginFilesystemClient.readFile(pathname) ⇒ <code>Promise.&lt;Blob&gt;</code>
 Read a file
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ Read a file
 #### pluginFilesystemClient.writeFile(pathname, [data]) ⇒ <code>Promise</code>
 Write a file
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -196,7 +196,7 @@ Write a file
 #### pluginFilesystemClient.mkdir(pathname) ⇒ <code>Promise</code>
 Create a directory
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -207,7 +207,7 @@ Create a directory
 #### pluginFilesystemClient.rename(oldPath, newPath) ⇒ <code>Promise</code>
 Rename a file or directory
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -219,7 +219,7 @@ Rename a file or directory
 #### pluginFilesystemClient.rm(pathname) ⇒ <code>Promise</code>
 Delete a file or directory
 
-**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)  
+**Kind**: instance method of [<code>PluginFilesystemClient</code>](#PluginFilesystemClient)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -230,7 +230,7 @@ Delete a file or directory
 ### PluginFilesystemServer
 Server-side representation of the soundworks' filesystem plugin.
 
-**Kind**: global class  
+**Kind**: global class
 
 * [PluginFilesystemServer](#PluginFilesystemServer)
     * [new PluginFilesystemServer()](#new_PluginFilesystemServer_new)
@@ -260,7 +260,7 @@ Available options:
 If no option is given, for example before a user selects a project, the plugin
 will stay idle until `switch` is called.
 
-**Example**  
+**Example**
 ```js
 server.pluginManager.register('filesystem', filesystemPlugin, {
   dirname: 'my-dir',
@@ -273,7 +273,7 @@ server.pluginManager.register('filesystem', filesystemPlugin, {
 Switch the filesystem to a new directory, e.g. to change project while
 keeping the same plugin and related logic at hand.
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -286,7 +286,7 @@ keeping the same plugin and related logic at hand.
 #### pluginFilesystemServer.getTree() ⇒ <code>Object</code>
 Return the current filesystem tree.
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 <a name="PluginFilesystemServer+onUpdate"></a>
 
 #### pluginFilesystemServer.onUpdate(callback, [executeListener]) ⇒ <code>function</code>
@@ -294,8 +294,8 @@ Register a callback to execute when a file is created, modified or deleted
 on the underlying directory. The callback will receive the updated `tree`
 and the list of `events` describing the modifications made on the tree.
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
-**Returns**: <code>function</code> - Function that unregister the listener when executed.  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
+**Returns**: <code>function</code> - Function that unregister the listener when executed.
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -307,7 +307,7 @@ and the list of `events` describing the modifications made on the tree.
 #### pluginFilesystemServer.findInTree(pathname) ⇒ <code>Object</code>
 Return a node from the tree matching the given path.
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -318,7 +318,7 @@ Return a node from the tree matching the given path.
 #### pluginFilesystemServer.readFile(pathname) ⇒ <code>Promise.&lt;Blob&gt;</code>
 Read a file.
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -329,7 +329,7 @@ Read a file.
 #### pluginFilesystemServer.writeFile(pathname, data) ⇒ <code>Promise</code>
 Write a file
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -341,7 +341,7 @@ Write a file
 #### pluginFilesystemServer.mkdir(pathname) ⇒ <code>Promise</code>
 Create a directory
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -352,7 +352,7 @@ Create a directory
 #### pluginFilesystemServer.rename(oldPath, newPath) ⇒ <code>Promise</code>
 Rename a file or directory
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -364,7 +364,7 @@ Rename a file or directory
 #### pluginFilesystemServer.rm(pathname) ⇒ <code>Promise</code>
 Delete a file or directory
 
-**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)  
+**Kind**: instance method of [<code>PluginFilesystemServer</code>](#PluginFilesystemServer)
 
 | Param | Type | Description |
 | --- | --- | --- |
