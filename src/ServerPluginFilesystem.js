@@ -135,7 +135,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
 
       if (!client) {
         res.status(404).end();
-        client.socket.send(`sw:plugin:${this.id}:err`, reqId, '[soundworks:PluginFilesystem] Unknown client');
+        client.socket.send(`sw:plugin:${this.id}:err`, reqId, 'Unknown client');
       }
 
       // we can send the http response now, as we are acknowledging though sockets
@@ -168,7 +168,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     // writeFile, mkdir, rename and delete from clients
     client.socket.addListener(`sw:plugin:${this.id}:req`, async (reqId, data) => {
       if (!this.server.isTrustedClient(client)) {
-        client.socket.send(`sw:plugin:${this.id}:err`, reqId, '[soundworks:PluginFilesystem] Action is not permitted');
+        client.socket.send(`sw:plugin:${this.id}:err`, reqId, 'Operation is not permitted');
         return;
       }
 
@@ -329,7 +329,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       watcher.on('all', this[kEventQueue]);
 
       watcher.on('error', (err) => {
-        console.error(`[soundworks:PluginFilesystem:${this.id}] chokidar error watching ${dirname}`);
+        console.error(`ServerPluginFileSystem chokidar error watching ${dirname}`);
         console.error(err);
         reject(err);
       });

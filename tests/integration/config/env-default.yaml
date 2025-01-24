@@ -1,0 +1,13 @@
+type: production
+port: 8080
+serverAddress: ''
+useHttps: false
+httpsInfos:
+  cert: null
+  key: null
+baseUrl: ''
+auth:
+  clients: [authorized]
+  login: login
+  password: password
+

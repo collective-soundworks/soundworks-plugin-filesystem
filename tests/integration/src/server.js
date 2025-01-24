@@ -1,10 +1,9 @@
 import '@soundworks/helpers/polyfills.js';
+import '@soundworks/helpers/catch-unhandled-errors.js';
 import { Server } from '@soundworks/core/server.js';
+import { loadConfig, configureHttpRouter } from '@soundworks/helpers/server.js';
 
-import { loadConfig } from '../utils/load-config.js';
-import '../utils/catch-unhandled-errors.js';
-
-import pluginFilesystem from '../../../../src/PluginFilesystemServer.js';
+import ServerPluginFilesystem from '../../../src/ServerPluginFilesystem.js';
 
 // - General documentation: https://soundworks.dev/
 // - API documentation:     https://soundworks.dev/api
@@ -20,23 +19,14 @@ console.log(`
 --------------------------------------------------------
 `);
 
-/**
- * Create the soundworks server
- */
 const server = new Server(config);
-// configure the server for usage within this application template
-server.useDefaultApplicationTemplate();
+configureHttpRouter(server);
 
-/**
- * Register plugins and schemas
- */
-server.pluginManager.register('filesystem', pluginFilesystem, {
+server.pluginManager.register('filesystem', ServerPluginFilesystem, {
   dirname: 'test-fs',
+  publicPath: 'test-fs',
 });
 
-/**
- * Launch application (init plugins, http server, etc.)
- */
 await server.start();
 
 // and do your own stuff!

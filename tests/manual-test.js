@@ -1,7 +1,6 @@
-// simple test server to test manual interactions with the file system
-// watch the `tests/manual/` directory
-//
-// simply launch using node: `node tests/simple-watcher.js`
+// `node tests/manual-test.js`
+// - simple test server to test manual interactions with the file system
+// - watch the `tests/manual/` directory
 
 import { Server } from '@soundworks/core/server.js';
 import filesystemPlugin from '../src/PluginFilesystemServer.js';
@@ -36,7 +35,7 @@ const config = {
   app: {
     name: 'test-plugin-filesystem',
     clients: {
-      test: { target: 'node' },
+      test: { runtime: 'node' },
     },
   },
   env: {

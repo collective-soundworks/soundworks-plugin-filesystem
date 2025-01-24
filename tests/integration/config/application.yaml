@@ -1,0 +1,9 @@
+name: integration
+author: ""
+clients:
+  authorized:
+    runtime: browser
+  not-authorized:
+    runtime: browser
+  thing:
+    runtime: node

@@ -1,5 +1,6 @@
 {
   "name": "integration",
-  "eslint": true,
-  "language": "js"
+  "createVersion": "1.0.0-alpha.23",
+  "language": "js",
+  "configFormat": "yaml"
 }

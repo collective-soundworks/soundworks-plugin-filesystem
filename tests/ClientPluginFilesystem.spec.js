@@ -1,25 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 import { Blob } from 'node:buffer';
 
-
 import { assert } from 'chai';
-import express from 'express';
-// @note - native node global.fetch introduce weird problems and timeouts
-import fetch from 'node-fetch';
 
 import { Server } from '@soundworks/core/server.js';
 import { Client } from '@soundworks/core/client.js';
-
-import serverFilesystemPlugin from '../src/PluginFilesystemServer.js';
-import clientFilesystemPlugin from '../src/PluginFilesystemClient.node.js';
+import ServerFilesystemPlugin from '../src/ServerPluginFilesystem.js';
+import ClientFilesystemPlugin from '../src/ClientPluginFilesystem.node.js';
 
 const config = {
   app: {
     name: 'test-plugin-filesystem',
     clients: {
-      test: { target: 'node' },
+      test: { runtime: 'node' },
     },
   },
   env: {
@@ -51,7 +45,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     // launch server
     server = new Server(config);
-    server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+    server.pluginManager.register('filesystem', ServerFilesystemPlugin, {
       dirname: 'tests/assets',
       publicPath: 'public',
     });
@@ -67,7 +61,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# plugin.constructor(server, id, name)', async () => {
     it(`should register and start properly`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -82,7 +76,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# plugin.getTree() -> FileTree', async () => {
     it(`should retrieve the file tree`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -108,7 +102,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# plugin.findInTree(pathOrUrl, tree = null) -> FileTree', async () => {
     it(`should find a node according to its path`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -126,7 +120,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it(`should find a node according to its path even with "./" prefix)`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -144,7 +138,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it(`should find a node according to its url`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -164,7 +158,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# plugin.onUpdate(updates => {})', async () => {
     it(`should retrieve the file tree`, async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -213,7 +207,7 @@ describe(`[client] PluginFilesystem`, () => {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -234,7 +228,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.readFile(filename)', () => {
     it('should retrieve a blob', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -248,7 +242,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should throw if file not found', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -268,7 +262,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should throw if pathname points to a directory', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -290,7 +284,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.writeFile(filename, data)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -307,7 +301,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should work with a Blob', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -331,7 +325,7 @@ describe(`[client] PluginFilesystem`, () => {
       }
 
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -361,7 +355,7 @@ describe(`[client] PluginFilesystem`, () => {
       }
 
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -386,7 +380,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -403,7 +397,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.mkdir(filename)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -418,7 +412,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should propagate errors back', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -440,7 +434,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should throw if trying to mkdir itself', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -462,7 +456,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -479,7 +473,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.rename(oldPath, newPath)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -501,7 +495,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should propagate errors back', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -523,7 +517,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should throw if trying to mkdir itself', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -545,7 +539,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -562,7 +556,7 @@ describe(`[client] PluginFilesystem`, () => {
   describe('# await plugin.rm(filename)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin);
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin);
 
       await client.start();
 
@@ -577,7 +571,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should propagate errors back', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -599,7 +593,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should throw if trying to rm itself', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -621,7 +615,7 @@ describe(`[client] PluginFilesystem`, () => {
 
     it('should resolve once tree is up to date', async () => {
       const client = new Client({ role: 'test', ...config });
-      client.pluginManager.register('filesystem', clientFilesystemPlugin)
+      client.pluginManager.register('filesystem', ClientFilesystemPlugin)
 
       await client.start();
 
@@ -645,7 +639,7 @@ describe(`[client] PluginFilesystem (protected)`, () => {
     app: {
       name: 'test-plugin-filesystem',
       clients: {
-        test: { target: 'node' },
+        test: { runtime: 'node' },
       },
     },
     env: {
@@ -669,7 +663,7 @@ describe(`[client] PluginFilesystem (protected)`, () => {
 
     // launch server in production mode
     server = new Server(config);
-    server.pluginManager.register('filesystem', serverFilesystemPlugin, {
+    server.pluginManager.register('filesystem', ServerFilesystemPlugin, {
       dirname: 'tests/assets',
     });
 
@@ -683,7 +677,7 @@ describe(`[client] PluginFilesystem (protected)`, () => {
 
   it('should block all sensitive commands in production if not trusted', async () => {
     const client = new Client({ role: 'test', ...config });
-    client.pluginManager.register('filesystem', clientFilesystemPlugin);
+    client.pluginManager.register('filesystem', ClientFilesystemPlugin);
     await client.start();
 
     const filesystem = await client.pluginManager.get('filesystem');

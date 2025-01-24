@@ -12,42 +12,42 @@ import { isString, isBrowser, counter } from '@ircam/sc-utils';
  * instantiated when registered in the `pluginManager`
  */
 export default class ClientPluginFilesystem extends ClientPlugin {
+  #commandPromises = new Map();
+  #commandIdGenerator = counter();
+  #treeState = null;
+
   /** @hideconstructor */
   constructor(client, id, options) {
     super(client, id);
 
-    const defaults = {};
-
-    this.options = Object.assign(defaults, options);
-
-    this._commandPromises = new Map();
-    this._commandIdGenerator = counter();
+    this.options = Object.assign({}, options);
   }
 
   /** @private */
   async start() {
     await super.start();
 
-    this._treeState = await this.client.stateManager.attach(`sw:plugin:${this.id}`);
+    this.#treeState = await this.client.stateManager.attach(`sw:plugin:${this.id}`);
 
     this.client.socket.addListener(`sw:plugin:${this.id}:ack`, reqId => {
-      const { resolve } = this._commandPromises.get(reqId);
-      this._commandPromises.delete(reqId);
+      const { resolve } = this.#commandPromises.get(reqId);
+      this.#commandPromises.delete(reqId);
 
       resolve();
     });
 
     this.client.socket.addListener(`sw:plugin:${this.id}:err`, (reqId, message) => {
-      const { reject } = this._commandPromises.get(reqId);
-      this._commandPromises.delete(reqId);
+      const { reject } = this.#commandPromises.get(reqId);
+      this.#commandPromises.delete(reqId);
 
+      message = `Invalid execution on ClientPluginFileSystem: ${message}`
       reject(new Error(message));
     });
   }
 
   /** @private */
   async stop() {
-    await this._treeState.detach();
+    await this.#treeState.detach();
     await super.stop();
   }
 
@@ -56,7 +56,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    * @return {Object}
    */
   getTree() {
-    return this._treeState.get('tree');
+    return this.#treeState.get('tree');
   }
 
   /**
@@ -70,7 +70,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    * @return {Function} Function that unregister the listener when executed.
    */
   onUpdate(callback, executeListener = false) {
-    return this._treeState.onUpdate(callback, executeListener);
+    return this.#treeState.onUpdate(callback, executeListener);
   }
 
   /**
@@ -82,7 +82,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    * @return {Object} Map of `<filename, url>`
    */
   getTreeAsUrlMap(filterExt, keepExtension = false) {
-    const tree = this._treeState.getUnsafe('tree');
+    const tree = this.#treeState.getUnsafe('tree');
     let map = {};
 
     if (!('url' in tree)) {
@@ -119,7 +119,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    * @return {Object}
    */
   findInTree(pathOrUrl) {
-    const tree = this._treeState.getUnsafe('tree');
+    const tree = this.#treeState.getUnsafe('tree');
 
     if (tree === null) {
       return null;
@@ -175,7 +175,10 @@ export default class ClientPluginFilesystem extends ClientPlugin {
       url = `${useHttps ? 'https' : 'http'}://${serverAddress}:${port}${url}`;
     }
 
-    const res = await ClientPluginFilesystem.fetch(url);
+    const res = ClientPluginFilesystem.fetch
+      ? await ClientPluginFilesystem.fetch(url)
+      : await globalThis.fetch(url);
+
     const blob = await res.blob();
 
     return blob;
@@ -191,8 +194,8 @@ export default class ClientPluginFilesystem extends ClientPlugin {
   async writeFile(pathname, data = '') {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
-      const reqId = this._commandIdGenerator();
-      this._commandPromises.set(reqId, { resolve, reject });
+      const reqId = this.#commandIdGenerator();
+      this.#commandPromises.set(reqId, { resolve, reject });
 
       if (isString(data)) {
         this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
@@ -211,26 +214,25 @@ export default class ClientPluginFilesystem extends ClientPlugin {
 
         if (!isBrowser()) {
           const { useHttps, serverAddress, port } = this.client.config.env;
-          url = `${useHttps ? 'https' : 'http'}://${serverAddress}:${port}${url}`;
+          url = `${useHttps ? 'https' : 'http'}://${serverAddress || '127.0.0.1'}:${port}${url}`;
         }
 
         try {
-          const res = await ClientPluginFilesystem.fetch(url, {
-            method: 'POST',
-            body: form,
-          });
+          const res = ClientPluginFilesystem.fetch
+            ? await ClientPluginFilesystem.fetch(url, { method: 'POST', body: form })
+            : await globalThis.fetch(url, { method: 'POST', body: form });
 
           if (res.status === 403) {
-            const { reject } = this._commandPromises.get(reqId);
-            this._commandPromises.delete(reqId);
+            const { reject } = this.#commandPromises.get(reqId);
+            this.#commandPromises.delete(reqId);
             // keep this, must match server-side error
-            reject(new Error(`[soundworks:PluginFilesystem] Action is not permitted`));
+            reject(new Error(`Invalid execution on ClientPluginFileSystem: Operation is not permitted`));
           }
         } catch (err) {
-          console.log(err.message);
+          reject(err);
         }
       } else {
-        this._commandPromises.delete(reqId);
+        this.#commandPromises.delete(reqId);
         reject(new TypeError(`Cannot execute 'writeFile' on ClientPluginFilesystem: argument 1 must be a String, a File or a Blob instance`));
       }
     });
@@ -244,8 +246,8 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    */
   mkdir(pathname) {
     return new Promise((resolve, reject) => {
-      const reqId = this._commandIdGenerator();
-      this._commandPromises.set(reqId, { resolve, reject });
+      const reqId = this.#commandIdGenerator();
+      this.#commandPromises.set(reqId, { resolve, reject });
 
       this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
         action: 'mkdir',
@@ -263,8 +265,8 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    */
   rename(oldPath, newPath) {
     return new Promise((resolve, reject) => {
-      const reqId = this._commandIdGenerator();
-      this._commandPromises.set(reqId, { resolve, reject });
+      const reqId = this.#commandIdGenerator();
+      this.#commandPromises.set(reqId, { resolve, reject });
 
       this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
         action: 'rename',
@@ -281,8 +283,8 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    */
   rm(pathname) {
     return new Promise((resolve, reject) => {
-      const reqId = this._commandIdGenerator();
-      this._commandPromises.set(reqId, { resolve, reject });
+      const reqId = this.#commandIdGenerator();
+      this.#commandPromises.set(reqId, { resolve, reject });
 
       this.client.socket.send(`sw:plugin:${this.id}:req`, reqId, {
         action: 'rm',
