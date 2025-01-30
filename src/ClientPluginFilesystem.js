@@ -40,7 +40,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
       const { reject } = this.#commandPromises.get(reqId);
       this.#commandPromises.delete(reqId);
 
-      message = `Invalid execution on ClientPluginFileSystem: ${message}`
+      message = `Invalid execution on ClientPluginFileSystem: ${message}`;
       reject(new Error(message));
     });
   }

@@ -1,6 +1,7 @@
 tests
 .editorconfig
-sw-filesystem.js
+eslint.config.js
+tsconfig.json
 
 # junk files
 .DS_Store

@@ -276,7 +276,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     }
 
     // discard tree
-    this.#treeState.set({ tree: null })
+    this.#treeState.set({ tree: null });
 
     // nothing left to do, this filesystem is in idle state
     if (dirname === null) {

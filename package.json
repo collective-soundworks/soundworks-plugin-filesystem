@@ -10,18 +10,24 @@
   "exports": {
     "./client.js": {
       "module": "./src/ClientPluginFilesystem.browser.js",
-      "node": "./src/ClientPluginFilesystem.node.js"
+      "node": "./src/ClientPluginFilesystem.node.js",
+      "types": "./types/ClientPluginFilesystem.d.ts"
     },
-    "./server.js": "./src/ServerPluginFilesystem.js"
+    "./server.js": {
+      "module": "./src/ServerPluginFilesystem.js",
+      "node": "./src/ServerPluginFilesystem.js",
+      "types": "./types/ServerPluginFilesystem.d.ts"
+    }
   },
   "scripts": {
-    "api": "jsdoc-to-readme --src src/*.js",
+    "api": "npm run types && jsdoc-to-readme --src src/*.js",
     "doc": "npm run api && npm run toc",
-    "lint": "npx eslint src && npx eslint tests",
-    "preversion": "npm run api && npm run toc && git commit -am 'docs: build' --allow-empty",
+    "lint": "npx eslint src",
+    "preversion": "npm run lint && npm run test && npm run api && npm run toc && git commit -am 'docs: build' --allow-empty",
     "test": "mocha tests/*.spec.js",
     "test:only": "mocha",
-    "toc": "markdown-toc -i README.md --maxdepth 2"
+    "toc": "markdown-toc -i README.md --maxdepth 2",
+    "types": "rm -rf types && tsc"
   },
   "publishConfig": {
     "access": "public"
@@ -46,12 +52,15 @@
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",
-    "@soundworks/core": "^4.0.0-alpha.20",
-    "@soundworks/helpers": "^1.0.0-alpha.18",
+    "@soundworks/helpers": "^5.0.0",
     "chai": "^5.1.2",
     "jsdoc-to-readme": "^2.0.2",
     "markdown-toc": "^1.2.0",
     "mocha": "^11.1.0",
-    "puppeteer": "^24.1.1"
+    "puppeteer": "^24.1.1",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@soundworks/core": "^5.0.0"
   }
 }
