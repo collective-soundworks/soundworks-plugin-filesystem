@@ -10,7 +10,7 @@
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Notes](#notes)
+- [Security Note](#security-note)
 - [API](#api)
 - [ClientPluginFilesystem](#clientpluginfilesystem)
 - [ServerPluginFilesystem](#serverpluginfilesystem)
