@@ -17,14 +17,14 @@
     "watch:sass": "sass --watch src/styles:.build/public/css"
   },
   "dependencies": {
-    "@soundworks/core": "^4.0.0-alpha.21",
-    "@soundworks/helpers": "^1.0.0-alpha.12",
+    "@soundworks/core": "latest",
+    "@soundworks/helpers": "latest",
     "lit": "^3.1.3"
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",
-    "@soundworks/build": "^1.0.0-alpha.1",
-    "@soundworks/create": "^1.0.0-alpha.23",
+    "@soundworks/build": "latest",
+    "@soundworks/create": "latest",
     "concurrently": "^8.2.2",
     "eslint": "^9.18.0",
     "sass": "^1.77.1"
