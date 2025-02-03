@@ -54,6 +54,7 @@
     "@ircam/eslint-config": "^2.0.1",
     "@soundworks/helpers": "^5.0.0",
     "chai": "^5.1.2",
+    "eslint": "^9.19.0",
     "jsdoc-to-readme": "^2.0.2",
     "markdown-toc": "^1.2.0",
     "mocha": "^11.1.0",

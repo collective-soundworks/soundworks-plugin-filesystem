@@ -149,7 +149,11 @@ describe('# Integration test', () => {
     it(`should not access protected methods`, async function() {
       this.timeout(10 * 1000);
 
-      browser = await puppeteer.launch({ headless: 'new' });
+      browser = await puppeteer.launch({
+        headless: true,
+        ignoreDefaultArgs: ["--disable-extensions"],
+        args: ["--no-sandbox", '--use-fake-ui-for-media-stream'],
+      });
       page = await browser.newPage();
 
       return new Promise(async (resolve, reject) => {
@@ -231,7 +235,11 @@ describe('# Integration test', () => {
     it(`should access protected methods`, async function() {
       this.timeout(5 * 1000);
 
-      browser = await puppeteer.launch({ headless: 'new' });
+      browser = await puppeteer.launch({
+        headless: true,
+        ignoreDefaultArgs: ["--disable-extensions"],
+        args: ["--no-sandbox", '--use-fake-ui-for-media-stream'],
+      });
       page = await browser.newPage();
 
       return new Promise(async (resolve, reject) => {
