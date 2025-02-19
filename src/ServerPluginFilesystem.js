@@ -376,7 +376,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     const dirname = this.options.dirname;
 
     if (this.options.dirname === null) {
-      throw new Error(`Cannot execute 'findInTree' on ServerPluginFilesystem: Cannot write file while filesystem is idle, you should call the 'switch' method first`);
+      throw new Error(`Cannot execute 'findInTree' on ServerPluginFilesystem: filesystem is idle, you should call the 'switch' method first`);
     }
 
     pathname = path.join(dirname, pathname);
@@ -394,13 +394,17 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     const dirname = this.options.dirname;
 
     if (this.options.dirname === null) {
-      throw new Error(`Cannot execute 'readFile' on ServerPluginFilesystem: Cannot write file while filesystem is idle, you should call the 'switch' method first`);
+      throw new Error(`Cannot execute 'readFile' on ServerPluginFilesystem: Cannot read file while filesystem is idle, you should call the 'switch' method first`);
     }
 
     pathname = path.join(dirname, pathname);
 
     if (!checkInDir(pathname, this.options.dirname)) {
-      throw new Error(`Cannot execute 'readFile' on ServerPluginFilesystem: Cannot write file outside directory "${dirname}"`);
+      throw new Error(`Cannot execute 'readFile' on ServerPluginFilesystem: Cannot read file outside directory "${dirname}"`);
+    }
+
+    if (!existsSync(pathname)) {
+      throw new Error(`Cannot execute 'readFile' on ServerPluginFilesystem: file "${pathname}" does not exists`);
     }
 
     const buffer = await readFile(pathname);
@@ -427,6 +431,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       throw new Error(`Cannot execute 'writeFile' on ServerPluginFilesystem: Cannot write file outside directory "${dirname}"`);
     }
 
+    // make sure file is seen in filesystem before resolving method call
     const promise = new Promise((resolve) => {
       const unsubscribe = this.onUpdate(() => {
         if (this.#getNode(pathname) !== null) {
@@ -435,6 +440,13 @@ export default class ServerPluginFilesystem extends ServerPlugin {
         }
       });
     });
+
+    // create parent directory if not exists
+    const parentDirectory = path.dirname(pathname);
+
+    if (!existsSync(parentDirectory)) {
+      await mkdir(parentDirectory, { recursive: true });
+    }
 
     await writeFile(pathname, data);
 
@@ -460,6 +472,11 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       throw new Error(`Cannot execute 'mkdir' on ServerPluginFilesystem: Cannot create directory outside directory "${dirname}"`);
     }
 
+    if (existsSync(pathname)) {
+      return Promise.resolve();
+    }
+
+    // make sure directory is seen in filesystem before resolving method call
     const promise = new Promise((resolve) => {
       const unsubscribe = this.onUpdate(() => {
         if (this.#getNode(pathname) !== null) {
@@ -500,6 +517,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       throw new Error(`Cannot execute 'rename' on ServerPluginFilesystem: Cannot rename to outside directory "${dirname}"`);
     }
 
+    // make sure directory/file is seen in filesystem before resolving method call
     const promise = new Promise((resolve) => {
       const unsubscribe = this.onUpdate(() => {
         if (this.#getNode(newPath) !== null) {
@@ -533,6 +551,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       throw new Error(`Cannot execute 'rm' on ServerPluginFilesystem: Cannot remove file that is not within directory "${dirname}"`);
     }
 
+    // make sure directory is removed in filesystem before resolving method call
     const promise = new Promise((resolve) => {
       const unsubscribe = this.onUpdate(() => {
         if (this.#getNode(pathname) === null) {
@@ -542,7 +561,6 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       });
     });
 
-    // @todo
     await rm(pathname, { recursive: true });
 
     return promise;

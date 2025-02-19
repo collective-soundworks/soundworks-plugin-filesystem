@@ -808,7 +808,7 @@ describe(`[server] PluginFilesystem`, () => {
       let errored = false;
 
       try {
-        const blob = await filesystem.readFile('do-not-exists.txt');
+        await filesystem.readFile('do-not-exists.txt');
       } catch(err) {
         console.log(err.message);
         errored = true;
@@ -907,6 +907,22 @@ describe(`[server] PluginFilesystem`, () => {
       }
     });
 
+    it(`should create parent directory if not exists`, async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', ServerPluginFilesystem, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+
+      await filesystem.writeFile('parent/test-write.txt', 'coucou');
+      const node = filesystem.findInTree('parent/test-write.txt');
+
+      assert.isNotNull(node);
+      await server.stop();
+    });
+
     it(`should resolve only once tree is up to date`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem, {
@@ -920,7 +936,6 @@ describe(`[server] PluginFilesystem`, () => {
       const node = filesystem.findInTree('test-write-await.txt');
 
       assert.isNotNull(node);
-
       await server.stop();
     });
   });
@@ -1012,6 +1027,29 @@ describe(`[server] PluginFilesystem`, () => {
       const node = filesystem.findInTree('./await-sub-dir');
 
       assert.isNotNull(node);
+
+      await server.stop();
+    });
+
+    it(`should resolve immediately if directory exists`, async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', ServerPluginFilesystem, {
+        dirname: 'tests/assets',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      await filesystem.mkdir('./await-sub-dir');
+      {
+        const node = filesystem.findInTree('./await-sub-dir');
+        assert.isNotNull(node);
+      }
+
+      await filesystem.mkdir('./await-sub-dir');
+      {
+        const node = filesystem.findInTree('./await-sub-dir');
+        assert.isNotNull(node);
+      }
 
       await server.stop();
     });

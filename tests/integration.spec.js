@@ -9,23 +9,22 @@ import puppeteer from 'puppeteer';
 const appPath = path.join(process.cwd(), 'tests', 'integration');
 const fsPath = path.join(appPath, 'test-fs');
 
-if (!fs.existsSync(path.join(appPath, 'node_modules'))) {
-  console.log('> Installing deps');
+describe('# Integration test', () => {
+  if (!fs.existsSync(path.join(appPath, 'node_modules'))) {
+    console.log('> Installing deps');
 
-  execSync('npm install', {
+    execSync('npm install', {
+      cwd: appPath,
+      stdio: 'inherit',
+    });
+  }
+
+  console.log('> Building app');
+
+  execSync('npm run build', {
     cwd: appPath,
     stdio: 'inherit',
   });
-}
-
-console.log('> Building app');
-
-execSync('npm run build', {
-  cwd: appPath,
-  stdio: 'inherit',
-});
-
-describe('# Integration test', () => {
 
   let forkedServer = null;
 
