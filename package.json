@@ -1,6 +1,6 @@
 {
   "name": "@soundworks/plugin-filesystem",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "soundworks plugin to parse and watch directories",
   "authors": [
     "Benjamin Matuszewski"
