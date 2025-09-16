@@ -10,8 +10,6 @@ export default class ClientPluginFilesystem {
     options: any;
     /** @private */
     private start;
-    /** @private */
-    private stop;
     /**
      * Return the current filesystem tree.
      * @return {Object}
