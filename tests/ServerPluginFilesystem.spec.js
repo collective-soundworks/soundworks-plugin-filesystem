@@ -13,20 +13,7 @@ import ServerPluginFilesystem, {
   kRouter,
 } from '../src/ServerPluginFilesystem.js';
 
-const config = {
-  app: {
-    name: 'test-plugin-filesystem',
-    clients: {
-      test: { runtime: 'node' },
-    },
-  },
-  env: {
-    port: 8080,
-    serverAddress: '127.0.0.1',
-    useHttps: false,
-    verbose: false,
-  },
-};
+import config from './config.js';
 
 describe(`[server] PluginFilesystem`, () => {
   beforeEach(() => {

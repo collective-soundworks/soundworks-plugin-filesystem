@@ -5,6 +5,8 @@
 import { Server } from '@soundworks/core/server.js';
 import filesystemPlugin from '../src/PluginFilesystemServer.js';
 
+import config from './config.js';
+
 function logTree(tree, depth) {
   let prefix = new Array(2 * depth).join(' ');
   prefix += tree.type === 'directory' ? '+' : '-';
@@ -30,21 +32,6 @@ function logEvents(events) {
     }
   });
 }
-
-const config = {
-  app: {
-    name: 'test-plugin-filesystem',
-    clients: {
-      test: { runtime: 'node' },
-    },
-  },
-  env: {
-    port: 8080,
-    serverAddress: '127.0.0.1',
-    useHttps: false,
-    verbose: false,
-  },
-};
 
 const server = new Server(config);
 server.pluginManager.register('filesystem', filesystemPlugin, {

@@ -45,12 +45,6 @@ export default class ClientPluginFilesystem extends ClientPlugin {
     });
   }
 
-  /** @private */
-  async stop() {
-    await this.#treeState.detach();
-    await super.stop();
-  }
-
   /**
    * Return the current filesystem tree.
    * @return {Object}

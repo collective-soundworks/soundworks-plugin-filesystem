@@ -9,20 +9,7 @@ import { Client } from '@soundworks/core/client.js';
 import ServerFilesystemPlugin from '../src/ServerPluginFilesystem.js';
 import ClientFilesystemPlugin from '../src/ClientPluginFilesystem.node.js';
 
-const config = {
-  app: {
-    name: 'test-plugin-filesystem',
-    clients: {
-      test: { runtime: 'node' },
-    },
-  },
-  env: {
-    port: 8080,
-    serverAddress: '127.0.0.1',
-    useHttps: false,
-    verbose: false,
-  },
-};
+import config from './config.js';
 
 describe(`[client] PluginFilesystem`, () => {
   let server = null;
