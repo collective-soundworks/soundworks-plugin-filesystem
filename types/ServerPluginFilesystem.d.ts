@@ -70,6 +70,15 @@ export default class ServerPluginFilesystem {
      */
     getTree(): any;
     /**
+     * Return the tree as flat map of `<filename, url>`
+     *
+     * @param {String} filterExt - File extension to retrieve in the list
+     * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
+     *  from the keys
+     * @return {Object} Map of `<filename, url>`
+     */
+    getTreeAsUrlMap(filterExt: string, keepExtension?: boolean): any;
+    /**
      * Register a callback to execute when a file is created, modified or deleted
      * on the underlying directory. The callback will receive the updated `tree`
      * and the list of `events` describing the modifications made on the tree.
