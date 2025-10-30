@@ -1,6 +1,8 @@
 import { ClientPlugin } from '@soundworks/core/client.js';
 import { isString, isBrowser, counter } from '@ircam/sc-utils';
 
+import { formatTreeAsUrlMap } from './utils.js';
+
 // @notes 03/2023:
 // - Blob is global in node.js and File is instance of Blob, no need to polyfill
 // - Use userland fetch because node globals.fetch is still experimental (and buggy)
@@ -77,33 +79,7 @@ export default class ClientPluginFilesystem extends ClientPlugin {
    */
   getTreeAsUrlMap(filterExt, keepExtension = false) {
     const tree = this.#treeState.getUnsafe('tree');
-    let map = {};
-
-    if (!('url' in tree)) {
-      throw new Error(`Cannot execute 'getTreeAsUrlMap' on ClientPluginFilesystem: Current filesystem configuration does not expose urls. You must define server "options.publicPath" to expose public urls`);
-    }
-
-    // eslint-disable-next-line no-useless-escape
-    let regexp = new RegExp(`\.?${filterExt}$`);
-
-    (function populateMap(node) {
-      if (('extension' in node) && regexp.test(node.extension)) {
-        let { name, url } = node;
-
-        if (keepExtension === false) {
-          const replace = new RegExp(`${node.extension}$`);
-          name = name.replace(replace, '');
-        }
-
-        map[name] = url;
-      }
-
-      if (node.children) {
-        node.children.forEach(child => populateMap(child));
-      }
-    }(tree));
-
-    return map;
+    return formatTreeAsUrlMap(tree, filterExt, keepExtension);
   }
 
   /**

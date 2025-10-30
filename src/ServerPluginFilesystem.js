@@ -11,6 +11,8 @@ import fileUpload from 'express-fileupload';
 import mime from 'mime-types';
 import normalize from 'normalize-path';
 
+import { formatTreeAsUrlMap } from './utils.js';
+
 const cwd = process.cwd();
 // eslint-disable-next-line no-useless-escape
 const EXCLUDE_DOT_FILES = /(^|[\/\\])\../;
@@ -351,6 +353,19 @@ export default class ServerPluginFilesystem extends ServerPlugin {
    */
   getTree() {
     return this.#treeState.get('tree');
+  }
+
+  /**
+   * Return the tree as flat map of `<filename, url>`
+   *
+   * @param {String} filterExt - File extension to retrieve in the list
+   * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
+   *  from the keys
+   * @return {Object} Map of `<filename, url>`
+   */
+  getTreeAsUrlMap(filterExt, keepExtension = false) {
+    const tree = this.#treeState.getUnsafe('tree');
+    return formatTreeAsUrlMap(tree, filterExt, keepExtension);
   }
 
   /**

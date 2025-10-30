@@ -656,6 +656,35 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
+  describe('# plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
+    it('should retrieve a filtered filename / url map', async () => {
+      // add some a file into assets
+      fs.mkdirSync('tests/assets', { parent: true });
+      fs.writeFileSync('tests/assets/sound.wav', 'some audio file');
+      // await for the file change to be propagated
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', ServerPluginFilesystem, {
+        dirname: 'tests/assets',
+        publicPath: '/public'
+      });
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+
+      { // with leading dot
+        const fileMap = filesystem.getTreeAsUrlMap('.wav');
+        assert.equal(fileMap['sound'], '/public/sound.wav');
+      }
+
+      { // without leading dot
+        const fileMap = filesystem.getTreeAsUrlMap('wav');
+        assert.equal(fileMap['sound'], '/public/sound.wav');
+      }
+
+      await server.stop();
+      fs.rmSync('tests/assets', { recursive: true, force: true });
+    });
+  });
+
   describe('# plugin.findInTree(path) -> TreeNode', () => {
     beforeEach(() => {
       const data = { a: true, b: 42};
