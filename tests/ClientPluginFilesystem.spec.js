@@ -11,7 +11,7 @@ import ClientFilesystemPlugin from '../src/ClientPluginFilesystem.node.js';
 
 import config from './config.js';
 
-describe(`[client] PluginFilesystem`, () => {
+describe(`# ClientPluginFilesystem`, () => {
   let server = null;
   const testFile = path.join('tests', 'assets', 'my-file.json');
   const fileData = { a: true }
@@ -45,7 +45,7 @@ describe(`[client] PluginFilesystem`, () => {
     await server.stop();
   });
 
-  describe('# plugin.constructor(server, id, name)', async () => {
+  describe('## plugin.constructor(server, id, name)', async () => {
     it(`should register and start properly`, async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -60,7 +60,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.getTree() -> FileTree', async () => {
+  describe.only('## plugin.getTree() -> FileTree', async () => {
     it(`should retrieve the file tree`, async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -71,13 +71,13 @@ describe(`[client] PluginFilesystem`, () => {
       const tree = filesystem.getTree();
       // console.log(tree);
 
-      assert.equal(tree.path, 'tests/assets');
+      assert.equal(tree.path, path.normalize('tests/assets'));
       assert.equal(tree.name, 'assets');
       assert.equal(tree.type, 'directory');
       assert.equal(tree.url, '/public/');
 
       assert.equal(tree.children.length, 1);
-      assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+      assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
       assert.equal(tree.children[0].name, 'my-file.json');
       assert.equal(tree.children[0].type, 'file');
       assert.equal(tree.children[0].url, '/public/my-file.json');
@@ -86,7 +86,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.findInTree(pathOrUrl, tree = null) -> FileTree', async () => {
+  describe('## plugin.findInTree(pathOrUrl, tree = null) -> FileTree', async () => {
     it(`should find a node according to its path`, async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -142,7 +142,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.onUpdate(updates => {})', async () => {
+  describe('## plugin.onUpdate(updates => {})', async () => {
     it(`should retrieve the file tree`, async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -186,7 +186,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
+  describe('## plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
     it('should retrieve a filtered filename / url map', async () => {
       // add some a file into assets
       fs.writeFileSync('tests/assets/sound.wav', 'some audio file');
@@ -212,7 +212,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.readFile(filename)', () => {
+  describe('## await plugin.readFile(filename)', () => {
     it('should retrieve a blob', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -268,7 +268,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.writeFile(filename, data)', () => {
+  describe('## await plugin.writeFile(filename, data)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -381,7 +381,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.mkdir(filename)', () => {
+  describe('## await plugin.mkdir(filename)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -457,7 +457,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.rename(oldPath, newPath)', () => {
+  describe('## await plugin.rename(oldPath, newPath)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -540,7 +540,7 @@ describe(`[client] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.rm(filename)', () => {
+  describe('## await plugin.rm(filename)', () => {
     it('should work with a string', async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin);

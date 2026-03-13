@@ -15,7 +15,7 @@ import ServerPluginFilesystem, {
 
 import config from './config.js';
 
-describe(`[server] PluginFilesystem`, () => {
+describe(`# ServerPluginFilesystem`, () => {
   beforeEach(() => {
     [
       path.join('tests', 'assets'),
@@ -38,7 +38,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# [private] checkInDir(filename, dirname)', () => {
+  describe('## [private] checkInDir(filename, dirname)', () => {
     it(`should check if pathname is inside a given directory`, async () => {
       const dirname = 'tests/assets';
 
@@ -56,7 +56,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.constructor(server, id, options)', async () => {
+  describe('## plugin.constructor(server, id, options)', async () => {
     it(`should support no options`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem);
@@ -76,7 +76,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# async plugin.switch(options)', async () => {
+  describe('## async plugin.switch(options)', async () => {
     it(`should throw if "options" is not an object`, async () => {
       const server = new Server(config);
 
@@ -656,7 +656,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
+  describe('## plugin.getTreeAsUrlMap(filterExt, keepExtension = false) -> { filename[.ext]: url }', () => {
     it('should retrieve a filtered filename / url map', async () => {
       // add some a file into assets
       fs.mkdirSync('tests/assets', { parent: true });
@@ -685,7 +685,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin.findInTree(path) -> TreeNode', () => {
+  describe('## plugin.findInTree(path) -> TreeNode', () => {
     beforeEach(() => {
       const data = { a: true, b: 42};
       const testFilename = path.join('tests', 'assets', 'my-file.json');
@@ -792,7 +792,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# await plugin.readFile(filename)', () => {
+  describe('## await plugin.readFile(filename)', () => {
     it('should retrieve a blob', async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
       fs.writeFileSync('tests/assets/my-file.json', '{"a":true}');
@@ -856,7 +856,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# async plugin.writeFile(filename, content)', () => {
+  describe('## async plugin.writeFile(filename, content)', () => {
     it(`should write a file`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem, {
@@ -956,7 +956,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# async plugin.mkdir(filename)', () => {
+  describe('## async plugin.mkdir(filename)', () => {
     it(`should create a directory`, async () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem, {
@@ -1071,7 +1071,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# async plugin.rename(oldPath, newPath)', () => {
+  describe('## async plugin.rename(oldPath, newPath)', () => {
     it(`should rename a file`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
       fs.writeFileSync(path.join('tests', 'assets', 'my-file.json'), 'coucou');
@@ -1189,7 +1189,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# async plugin.rm(filename)', () => {
+  describe('## async plugin.rm(filename)', () => {
     it(`should remove a file`, async () => {
       fs.mkdirSync(path.join('tests', 'assets'));
       fs.writeFileSync(path.join('tests', 'assets', 'my-file.json'), 'coucou');
@@ -1297,7 +1297,7 @@ describe(`[server] PluginFilesystem`, () => {
     });
   });
 
-  describe('# plugin in idle state (dirname is null)', () => {
+  describe('## plugin in idle state (dirname is null)', () => {
     let server;
     let filesystem;
 

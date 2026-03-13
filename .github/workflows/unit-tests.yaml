@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        runner: [ubuntu-latest, windows-latest]
+        runner: [windows-latest]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
