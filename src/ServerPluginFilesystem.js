@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
-  ServerPlugin
+  ServerPlugin,
 } from '@soundworks/core/server.js';
 import {
   isPlainObject,
