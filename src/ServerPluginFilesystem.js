@@ -2,8 +2,13 @@ import { existsSync, statSync, mkdirSync } from 'node:fs';
 import { readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-import { ServerPlugin } from '@soundworks/core/server.js';
-import { isPlainObject, isString } from '@ircam/sc-utils';
+import {
+  ServerPlugin
+} from '@soundworks/core/server.js';
+import {
+  isPlainObject,
+  isString,
+} from '@ircam/sc-utils';
 import chokidar from 'chokidar';
 import dirTree from 'directory-tree';
 import express from 'express';
@@ -358,12 +363,13 @@ export default class ServerPluginFilesystem extends ServerPlugin {
   /**
    * Return the tree as flat map of `<filename, url>`
    *
-   * @param {String} filterExt - File extension to retrieve in the list
+   * @param {String} filterExt - File extension to retrieve in the list.
+   *  If several extensions, should be seprarated with a `|`, e.g. `'wav|map3'`
    * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
    *  from the keys
    * @return {Object} Map of `<filename, url>`
    */
-  getTreeAsUrlMap(filterExt, keepExtension = false) {
+  getTreeAsUrlMap(filterExt = null, keepExtension = false) {
     const tree = this.#treeState.getUnsafe('tree');
     return formatTreeAsUrlMap(tree, filterExt, keepExtension);
   }
