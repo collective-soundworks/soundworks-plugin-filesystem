@@ -1,7 +1,8 @@
 /**
  *
  * @param {*} tree
- * @param {String} filterExt - File extension to retrieve in the list
+ * @param {String} filterExt - File extension to retrieve in the list,
+ *  mutliple
  * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
  *  from the keys
  * @returns

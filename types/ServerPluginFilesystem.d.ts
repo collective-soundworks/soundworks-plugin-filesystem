@@ -72,12 +72,13 @@ export default class ServerPluginFilesystem {
     /**
      * Return the tree as flat map of `<filename, url>`
      *
-     * @param {String} filterExt - File extension to retrieve in the list
+     * @param {String} filterExt - File extension to retrieve in the list.
+     *  If several extensions, should be seprarated with a `|`, e.g. `'wav|map3'`
      * @param {Boolean} [keepExtension=false] - Keep or remove the file extension
      *  from the keys
      * @return {Object} Map of `<filename, url>`
      */
-    getTreeAsUrlMap(filterExt: string, keepExtension?: boolean): any;
+    getTreeAsUrlMap(filterExt?: string, keepExtension?: boolean): any;
     /**
      * Register a callback to execute when a file is created, modified or deleted
      * on the underlying directory. The callback will receive the updated `tree`

@@ -268,7 +268,8 @@ Return the tree as flat map of `<filename, url>`
 
 #### Parameters
 
-*   `filterExt` **[String][28]** File extension to retrieve in the list
+*   `filterExt` **[String][28]** File extension to retrieve in the list.
+    If several extensions, should be seprarated with a `|`, e.g. `'wav|map3'` (optional, default `null`)
 *   `keepExtension` **[Boolean][27]** Keep or remove the file extension
     from the keys (optional, default `false`)
 
@@ -355,7 +356,8 @@ Returns **[Promise][29]**&#x20;
 ### Parameters
 
 *   `tree` **any**&#x20;
-*   `filterExt` **[String][28]** File extension to retrieve in the list
+*   `filterExt` **[String][28]** File extension to retrieve in the list,
+    mutliple
 *   `keepExtension` **[Boolean][27]** Keep or remove the file extension
     from the keys (optional, default `false`)
 
