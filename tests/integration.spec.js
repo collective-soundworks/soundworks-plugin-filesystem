@@ -10,6 +10,11 @@ const appPath = path.join(process.cwd(), 'tests', 'integration');
 const fsPath = path.join(appPath, 'test-fs');
 
 describe('# Integration test', () => {
+  if (process.platform === 'win32') {
+    console.log('Skip integration testing on windows (could not make puppeteer to work properly)');
+    return;
+  }
+
   if (!fs.existsSync(path.join(appPath, 'node_modules'))) {
     console.log('> Installing deps');
 

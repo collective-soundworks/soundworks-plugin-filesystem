@@ -582,7 +582,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       });
     });
 
-    await rm(pathname, { recursive: true });
+    await rm(pathname, { force: true, recursive: true });
 
     return promise;
   }

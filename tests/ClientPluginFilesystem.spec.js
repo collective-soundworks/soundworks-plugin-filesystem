@@ -60,7 +60,7 @@ describe(`# ClientPluginFilesystem`, () => {
     });
   });
 
-  describe.only('## plugin.getTree() -> FileTree', async () => {
+  describe('## plugin.getTree() -> FileTree', async () => {
     it(`should retrieve the file tree`, async () => {
       const client = new Client({ role: 'test', ...config });
       client.pluginManager.register('filesystem', ClientFilesystemPlugin)
@@ -96,7 +96,7 @@ describe(`# ClientPluginFilesystem`, () => {
       const filesystem = await client.pluginManager.get('filesystem');
       const node = filesystem.findInTree('my-file.json');
 
-      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.path, path.normalize('tests/assets/my-file.json'));
       assert.equal(node.relPath, 'my-file.json');
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.type, 'file');
@@ -114,7 +114,7 @@ describe(`# ClientPluginFilesystem`, () => {
       const filesystem = await client.pluginManager.get('filesystem');
       const node = filesystem.findInTree('./my-file.json');
 
-      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.path, path.normalize('tests/assets/my-file.json'));
       assert.equal(node.relPath, 'my-file.json');
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.type, 'file');
@@ -132,7 +132,7 @@ describe(`# ClientPluginFilesystem`, () => {
       const filesystem = await client.pluginManager.get('filesystem');
       const node = filesystem.findInTree('/public/my-file.json');
 
-      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.path, path.normalize('tests/assets/my-file.json'));
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.extension, '.json');
       assert.equal(node.type, 'file');
@@ -157,20 +157,20 @@ describe(`# ClientPluginFilesystem`, () => {
 
         executed = true;
 
-        assert.equal(tree.path, 'tests/assets');
+        assert.equal(tree.path, path.normalize('tests/assets'));
         assert.equal(tree.name, 'assets');
         assert.equal(tree.type, 'directory');
         assert.equal(tree.url, '/public/');
 
         assert.equal(tree.children.length, 1);
-        assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+        assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
         assert.equal(tree.children[0].name, 'my-file.json');
         assert.equal(tree.children[0].type, 'file');
         assert.equal(tree.children[0].url, '/public/my-file.json');
 
         const event = events[0];
         assert.equal(event.type, 'update');
-        assert.equal(event.node.path, 'tests/assets/my-file.json');
+        assert.equal(event.node.path, path.normalize('tests/assets/my-file.json'));
         assert.equal(event.node.name, 'my-file.json');
         assert.equal(event.node.extension, '.json');
         assert.equal(event.node.type, 'file');

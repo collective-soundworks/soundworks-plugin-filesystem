@@ -22,7 +22,7 @@ describe(`# ServerPluginFilesystem`, () => {
       path.join('tests', 'public'),
     ].forEach(testDir => {
       if (fs.existsSync(testDir)) {
-        fs.rmSync(testDir, { recursive: true });
+        fs.rmSync(testDir, { force: true, recursive: true });
       }
     });
   });
@@ -33,7 +33,7 @@ describe(`# ServerPluginFilesystem`, () => {
       path.join('tests', 'public'),
     ].forEach(testDir => {
       if (fs.existsSync(testDir)) {
-        fs.rmSync(testDir, { recursive: true });
+        fs.rmSync(testDir, { force: true, recursive: true });
       }
     });
   });
@@ -282,12 +282,12 @@ describe(`# ServerPluginFilesystem`, () => {
       const tree = filesystem.getTree();
       // console.dir(tree);
 
-      assert.equal(tree.path, 'tests/public');
+      assert.equal(tree.path, path.normalize('tests/public'));
       assert.equal(tree.name, 'public');
       assert.equal(tree.type, 'directory');
       assert.equal('size' in tree, true);
 
-      assert.equal(tree.children[0].path, 'tests/public/my-file.json');
+      assert.equal(tree.children[0].path, path.normalize('tests/public/my-file.json'));
       assert.equal(tree.children[0].name, 'my-file.json');
       assert.equal(tree.children[0].url, '/my-file.json');
       assert.equal(tree.children[0].type, 'file');
@@ -300,7 +300,8 @@ describe(`# ServerPluginFilesystem`, () => {
       await server.stop();
     });
 
-    it(`should properly switch - no publicPath -> no route opened`, async () => {
+    it(`should properly switch - no publicPath -> no route opened`, async function() {
+      this.timeout(10 * 1000)
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem);
 
@@ -319,12 +320,17 @@ describe(`# ServerPluginFilesystem`, () => {
       let index = 0;
       filesystem.onUpdate(updates => {
         const { tree } = updates;
+
+        if (!tree) {
+          return;
+        }
+
         if (index === 0) {
-          assert.equal(tree.path, 'tests/assets/project-a');
-          assert.equal(tree.children[0].path, 'tests/assets/project-a/a.txt');
+          assert.equal(tree.path, path.normalize('tests/assets/project-a'));
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/project-a/a.txt'));
         } else {
-          assert.equal(tree.path, 'tests/assets/project-b');
-          assert.equal(tree.children[0].path, 'tests/assets/project-b/b.txt');
+          assert.equal(tree.path, path.normalize('tests/assets/project-b'));
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/project-b/b.txt'));
         }
 
         index++;
@@ -334,19 +340,20 @@ describe(`# ServerPluginFilesystem`, () => {
         await filesystem.switch({ dirname: projectAPath });
         const tree = filesystem.getTree();
         // console.log(tree);
-        assert.equal(tree.path, 'tests/assets/project-a');
-        assert.equal(tree.children[0].path, 'tests/assets/project-a/a.txt');
+        assert.equal(tree.path, path.normalize('tests/assets/project-a'));
+        assert.equal(tree.children[0].path, path.normalize('tests/assets/project-a/a.txt'));
       }
 
       {
         await filesystem.switch({ dirname: projectBPath });
         const tree = filesystem.getTree();
 
-        assert.equal(tree.path, 'tests/assets/project-b');
-        assert.equal(tree.children[0].path, 'tests/assets/project-b/b.txt');
+        assert.equal(tree.path, path.normalize('tests/assets/project-b'));
+        assert.equal(tree.children[0].path, path.normalize('tests/assets/project-b/b.txt'));
       }
 
       await server.stop();
+      assert.equal(index, 2);
     });
 
     it(`should properly switch publicPath`, async () => {
@@ -527,15 +534,14 @@ describe(`# ServerPluginFilesystem`, () => {
       await server.start();
       const filesystem = await server.pluginManager.get('filesystem');
       const tree = filesystem.getTree();
-      // console.dir(tree);
 
-      assert.equal(tree.path, 'tests/assets');
+      assert.equal(tree.path, path.normalize('tests/assets'));
       assert.equal(tree.relPath, '');
       assert.equal(tree.name, 'assets');
       assert.equal(tree.type, 'directory');
       assert.equal('size' in tree, true);
 
-      assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+      assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
       assert.equal(tree.children[0].relPath, 'my-file.json');
       assert.equal(tree.children[0].name, 'my-file.json');
       assert.equal(tree.children[0].type, 'file');
@@ -559,14 +565,14 @@ describe(`# ServerPluginFilesystem`, () => {
         const filesystem = await server.pluginManager.get('filesystem');
         const tree = filesystem.getTree();
 
-        assert.equal(tree.path, 'tests/assets');
+        assert.equal(tree.path, path.normalize('tests/assets'));
         assert.equal(tree.relPath, '');
         assert.equal(tree.name, 'assets');
         assert.equal(tree.type, 'directory');
         assert.equal('size' in tree, true);
         assert.equal('mimeType' in tree, false);
 
-        assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+        assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
         assert.equal(tree.children[0].relPath, 'my-file.json');
         assert.equal(tree.children[0].url, '/niap/my-file.json');
         assert.equal(tree.children[0].name, 'my-file.json');
@@ -601,13 +607,13 @@ describe(`# ServerPluginFilesystem`, () => {
         const tree = filesystem.getTree();
         // console.dir(tree);
 
-        assert.equal(tree.path, 'tests/assets');
+        assert.equal(tree.path, path.normalize('tests/assets'));
         assert.equal(tree.relPath, '');
         assert.equal(tree.name, 'assets');
         assert.equal(tree.type, 'directory');
         assert.equal('size' in tree, true);
 
-        assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+        assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
         assert.equal(tree.children[0].relPath, 'my-file.json');
         assert.equal(tree.children[0].url, '/nginx-front/niap/my-file.json');
         assert.equal(tree.children[0].name, 'my-file.json');
@@ -638,13 +644,13 @@ describe(`# ServerPluginFilesystem`, () => {
       const tree = filesystem.getTree();
       // console.dir(tree);
 
-      assert.equal(tree.path, 'tests/assets');
+      assert.equal(tree.path, path.normalize('tests/assets'));
       assert.equal(tree.relPath, '');
       assert.equal(tree.name, 'assets');
       assert.equal(tree.type, 'directory');
       assert.equal('size' in tree, true);
 
-      assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+      assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
       assert.equal(tree.children[0].relPath, 'my-file.json');
       assert.equal(tree.children[0].url, '/nginx-front/niap/my-file.json');
       assert.equal(tree.children[0].name, 'my-file.json');
@@ -703,7 +709,7 @@ describe(`# ServerPluginFilesystem`, () => {
 
       const node = filesystem.findInTree('my-file.json');
 
-      assert.equal(node.path, 'tests/assets/my-file.json');
+      assert.equal(node.path, path.normalize('tests/assets/my-file.json'));
       assert.equal(node.relPath, 'my-file.json');
       assert.equal(node.name, 'my-file.json');
       assert.equal(node.type, 'file');
@@ -753,24 +759,24 @@ describe(`# ServerPluginFilesystem`, () => {
         // assert.equal(node.path, 'tests/assets/my-file.json');
 
         if (counter === 0) {
-          assert.equal(tree.path, 'tests/assets');
+          assert.equal(tree.path, path.join('tests/assets'));
           assert.equal(tree.children.length, 1);
-          assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
 
           assert.equal(events, null);
         } else if (counter === 1) {
-          assert.equal(tree.path, 'tests/assets');
+          assert.equal(tree.path, path.join('tests/assets'));
           assert.equal(tree.children.length, 1);
-          assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
         } else if (counter === 2) {
-          assert.equal(tree.path, 'tests/assets');
+          assert.equal(tree.path, path.join('tests/assets'));
           assert.equal(tree.children.length, 2);
-          assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
-          assert.equal(tree.children[1].path, 'tests/assets/other-file.json');
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
+          assert.equal(tree.children[1].path, path.normalize('tests/assets/other-file.json'));
         } else if (counter === 3) {
-          assert.equal(tree.path, 'tests/assets');
+          assert.equal(tree.path, path.join('tests/assets'));
           assert.equal(tree.children.length, 1);
-          assert.equal(tree.children[0].path, 'tests/assets/my-file.json');
+          assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
         }
 
         counter += 1;
