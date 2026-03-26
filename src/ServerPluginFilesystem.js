@@ -262,7 +262,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     }
 
     this.options = Object.assign(this.options, options);
-    const { dirname, publicPath, depth } = this.options;
+    let { dirname, publicPath, depth } = this.options;
 
     // all good clean previous watcher and middleware
     // clean watcher and route
@@ -308,6 +308,11 @@ export default class ServerPluginFilesystem extends ServerPlugin {
         throw new TypeError(`Cannot execute 'switch' on ServerPluginFilesystem: Invalid option "options.publicPath", should be a string`);
       }
 
+      // clean public path
+      publicPath = publicPath.replace('\\', '/'); // replace backslashes from slashes, if defined from a windows pathname
+      publicPath = publicPath.replace(/^\//, ''); // remove leading slash
+      publicPath = publicPath.replace(/\/+/, '/'); // deduplicate slashes
+
       // throw if a route already exists
       this[kRouter]._router.stack.forEach(layer => {
         if (layer.route?.path === publicPath) {
@@ -317,7 +322,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
 
       const middleware = express.static(dirname);
       // automatically create route for static assets
-      this[kRouter].use(`/${publicPath.replace(/^\//, '')}`, middleware);
+      this[kRouter].use(`/${publicPath}`, middleware);
 
       this.#middleware = middleware;
     }

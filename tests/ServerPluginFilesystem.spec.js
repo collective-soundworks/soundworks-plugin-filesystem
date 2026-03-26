@@ -237,7 +237,7 @@ describe(`# ServerPluginFilesystem`, () => {
     it(`should open a route for static assets according to publicPath`, async function() {
       const data = { a: true, b: 42};
       const testFilename = path.join('tests', 'assets', 'my-file.json');
-      const testFilePath = `http://127.0.0.1:${config.env.port}/tests/my-file.json`;
+      const testFilePath = `http://127.0.0.1:${config.env.port}/tests/coucou/my-file.json`;
       // create dummy test file
       fs.mkdirSync(path.join('tests', 'assets'));
       fs.writeFileSync(testFilename, JSON.stringify(data));
@@ -245,7 +245,30 @@ describe(`# ServerPluginFilesystem`, () => {
       const server = new Server(config);
       server.pluginManager.register('filesystem', ServerPluginFilesystem, {
         dirname: 'tests/assets',
-        publicPath: 'tests',
+        publicPath: 'tests/coucou',
+      });
+
+      await server.start();
+
+      const json = await fetch(testFilePath).then(res => res.json());
+      assert.deepEqual(json, data);
+      console.log(json, data);
+
+      await server.stop();
+    });
+
+    it(`should properly convert publicPath if defined with windows style backslashes`, async function() {
+      const data = { a: true, b: 42};
+      const testFilename = path.join('tests', 'assets', 'my-file.json');
+      const testFilePath = `http://127.0.0.1:${config.env.port}/tests/coucou/my-file.json`;
+      // create dummy test file
+      fs.mkdirSync(path.join('tests', 'assets'));
+      fs.writeFileSync(testFilename, JSON.stringify(data));
+
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', ServerPluginFilesystem, {
+        dirname: 'tests/assets',
+        publicPath: 'tests\\coucou',
       });
 
       await server.start();
