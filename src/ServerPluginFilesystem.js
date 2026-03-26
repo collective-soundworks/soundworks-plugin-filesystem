@@ -262,6 +262,18 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     }
 
     this.options = Object.assign(this.options, options);
+
+    if (this.options.publicPath !== null) {
+      if (!isString(this.options.publicPath)) {
+        throw new TypeError(`Cannot execute 'switch' on ServerPluginFilesystem: Invalid option "options.publicPath", should be a string`);
+      }
+
+      // sanitize public path
+      this.options.publicPath = this.options.publicPath.replace(/\\/g, '/'); // replace backslashes from slashes, if defined from a windows pathname
+      this.options.publicPath = this.options.publicPath.replace(/^\//, ''); // remove leading slash
+      this.options.publicPath = this.options.publicPath.replace(/\/+/g, '/'); // deduplicate slashes
+    }
+
     let { dirname, publicPath, depth } = this.options;
 
     // all good clean previous watcher and middleware
@@ -303,16 +315,7 @@ export default class ServerPluginFilesystem extends ServerPlugin {
     // @todo review - This might not be what we want in all cases: what if we
     // don't use default template? Maybe we should just ignore instead of throwing
     // if some static route and middleware already exists for that publicPath.
-    if (publicPath !== null && publicPath !== '' && publicPath !== '/') {
-      if (!isString(publicPath)) {
-        throw new TypeError(`Cannot execute 'switch' on ServerPluginFilesystem: Invalid option "options.publicPath", should be a string`);
-      }
-
-      // clean public path
-      publicPath = publicPath.replace('\\', '/'); // replace backslashes from slashes, if defined from a windows pathname
-      publicPath = publicPath.replace(/^\//, ''); // remove leading slash
-      publicPath = publicPath.replace(/\/+/, '/'); // deduplicate slashes
-
+    if (publicPath !== null && publicPath !== '') {
       // throw if a route already exists
       this[kRouter]._router.stack.forEach(layer => {
         if (layer.route?.path === publicPath) {

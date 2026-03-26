@@ -609,6 +609,37 @@ describe(`# ServerPluginFilesystem`, () => {
       }
     });
 
+    it(`should sanitize urls if publicPath defined in windows style`, async () => {
+      const server = new Server(config);
+      server.pluginManager.register('filesystem', ServerPluginFilesystem, {
+        dirname: 'tests/assets',
+        publicPath: '\\niap\\coucou',
+      });
+
+      await server.start();
+      const filesystem = await server.pluginManager.get('filesystem');
+      const tree = filesystem.getTree();
+
+      assert.equal(tree.path, path.normalize('tests/assets'));
+      assert.equal(tree.relPath, '');
+      assert.equal(tree.name, 'assets');
+      assert.equal(tree.type, 'directory');
+      assert.equal('size' in tree, true);
+      assert.equal('mimeType' in tree, false);
+
+      assert.equal(tree.children[0].path, path.normalize('tests/assets/my-file.json'));
+      assert.equal(tree.children[0].relPath, 'my-file.json');
+      assert.equal(tree.children[0].url, '/niap/coucou/my-file.json');
+      assert.equal(tree.children[0].name, 'my-file.json');
+      assert.equal(tree.children[0].type, 'file');
+      assert.equal(tree.children[0].extension, '.json');
+      assert.equal(tree.children[0].mimeType, 'application/json');
+
+      assert.equal('size' in tree.children[0], true);
+
+      await server.stop();
+    });
+
     it(`should handle config.env.baseUrl in urls`, async () => {
       const publicPaths = ['niap', '/niap', '/niap/'];
 
