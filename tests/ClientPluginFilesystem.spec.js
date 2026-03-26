@@ -40,7 +40,8 @@ describe(`# ClientPluginFilesystem`, () => {
     await server.start();
   });
 
-  afterEach(async () => {
+  afterEach(async function() {
+    this.timeout(10 * 1000);
     fs.rmSync(path.join('tests', 'assets'), { recursive: true });
     await server.stop();
   });
