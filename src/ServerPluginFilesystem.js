@@ -121,11 +121,9 @@ export default class ServerPluginFilesystem extends ServerPlugin {
       this.server.httpServer.on('request', this[kRouter]);
     }
 
-    this[kRouter].use(fileUpload());
-
     this.#treeState = await this.server.stateManager.create(`sw:plugin:${this.id}`);
 
-    this[kRouter].post(`/sw/plugin/${this.id}/upload`, async (req, res) => {
+    this[kRouter].post(`/sw/plugin/${this.id}/upload`, fileUpload(), async (req, res) => {
       const clientId = parseInt(req.body.clientId);
       const clientIp = req.ip;
       const token = req.body.token;
